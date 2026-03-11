@@ -1,0 +1,22 @@
+{
+  "services": [
+    {
+      "name": "evm",
+      "type": "http",
+      "baseUrl": "http://localhost:8001",
+      "description": "EVM deposundan taşınacak backend + cli adaptörleri"
+    },
+    {
+      "name": "solana",
+      "type": "http",
+      "baseUrl": "http://localhost:8002",
+      "description": "Diğer depo için placeholder"
+    },
+    {
+      "name": "btc",
+      "type": "http",
+      "baseUrl": "http://localhost:8003",
+      "description": "Diğer depo için placeholder"
+    }
+  ]
+}
