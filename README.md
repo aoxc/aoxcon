@@ -1,70 +1,166 @@
 # AoxCon
 
-AoxCon is a central coordination repository intended to bring together the **web interface**, **backend orchestration layer**, and **command-line tooling** of the AOXC ecosystem.
+AoxCon is the unified coordination layer of the AOXC ecosystem.
 
-The goal of this repository is to provide a single operational entry point where multiple services and chain integrations can be coordinated and managed in a consistent way.
+It provides a single operational interface for managing blockchain integrations, AI services, and decentralized governance infrastructure across multiple networks.
 
-At the moment the project should be considered **early infrastructure under active development**. Components are still evolving and some functionality is implemented as stubs while integration work continues.
+The system is designed to orchestrate and control services across chains such as **XLayer, Sui, Cardano, and EVM-compatible networks**, while also integrating **AI-powered agents and DAO governance mechanisms** into a unified operational framework.
+
+Rather than acting as a blockchain itself, AoxCon functions as an **ecosystem control layer** — a central surface where infrastructure, governance, automation, and community participation converge.
 
 ---
 
-# Purpose
+# Vision
 
-Several AOXC components currently exist across separate repositories.  
-AoxCon aims to gradually consolidate those pieces into a unified operational layer.
+Modern decentralized ecosystems are fragmented across many networks, tools, and operational layers.
 
-The repository is designed to:
+AoxCon exists to solve that fragmentation.
 
-- provide a central backend gateway
-- expose a lightweight web management interface
-- offer a unified CLI for operational commands
-- coordinate multiple chain integrations through a common dispatch mechanism
+The goal is to create a **single command surface** capable of coordinating:
 
-Rather than replacing existing services, AoxCon is intended to **organize and orchestrate them from a single control surface**.
+- multi-chain infrastructure
+- AI-driven automation
+- DAO governance systems
+- operational tooling
+- service orchestration
+
+Through AoxCon, the AOXC ecosystem aims to provide a **coherent operational environment** where blockchain services, community governance, and intelligent automation can interact seamlessly.
+
+---
+
+# Core Capabilities
+
+### Multi-Chain Control
+
+AoxCon provides operational integration for multiple blockchain environments, including:
+
+- **XLayer**
+- **Sui**
+- **Cardano**
+- **EVM-compatible networks**
+
+Through a unified dispatch mechanism, these networks can be managed from a single backend gateway and control interface.
+
+---
+
+### AI Integration
+
+The platform is designed to integrate **AI agents and automation systems** into the operational layer.
+
+AI components may assist with:
+
+- infrastructure monitoring
+- operational automation
+- governance analytics
+- service orchestration
+- community tooling
+
+AI agents operate as modular services that can be coordinated through the same dispatch system used for blockchain integrations.
+
+---
+
+### DAO Governance
+
+AoxCon also acts as an operational interface for decentralized governance.
+
+DAO structures within the ecosystem can interact with infrastructure through controlled service adapters.
+
+This allows governance processes to influence:
+
+- ecosystem parameters
+- operational actions
+- infrastructure coordination
+- community initiatives
+
+Governance decisions originate from the **community layer**, ensuring that the ecosystem remains decentralized in both philosophy and execution.
 
 ---
 
 # Repository Structure
 
-The project is organized into three primary application layers.
+The repository is organized into three primary application layers.
 
 
 apps/
-├─ backend → service gateway and orchestration layer
-├─ frontend → lightweight administrative interface
-└─ cli → operational command line tooling
+├─ backend
+│ └─ service gateway and orchestration layer
+│
+├─ frontend
+│ └─ ecosystem management interface
+│
+└─ cli
+└─ operational command-line tooling
 
 
-Additional configuration lives under:
+Configuration for service integrations is defined in:
 
 
 config/services.json
 
 
-This file acts as a service registry describing available integrations such as EVM or other chains.
+This file acts as the service registry describing available integrations such as blockchain networks and AI services.
 
 ---
 
-# Architecture Overview
+# System Architecture
 
-The system follows a simple layered model.
+AoxCon follows a layered orchestration architecture designed to coordinate multiple external systems.
 
-Backend (Gateway / Orchestrator)
+### Backend Gateway
 
-The backend acts as a routing and coordination layer.  
-External services are accessed through adapters which normalize requests and responses.
+The backend acts as the ecosystem gateway responsible for:
 
-Web Interface
+- routing service requests
+- coordinating blockchain integrations
+- dispatching actions to adapters
+- normalizing responses across services
 
-The web layer provides a minimal operational interface for inspecting services and triggering actions.
+Each external system is integrated through a modular adapter.
 
-CLI
+---
 
-The CLI provides a deterministic command-line interface for operational workflows, scripting, and automation.
+### Web Interface
 
-Configuration
+The frontend provides a lightweight administrative and monitoring interface.
 
-Service endpoints and integration parameters are centralized in a configuration file to keep runtime behavior predictable.
+It allows operators and ecosystem participants to:
+
+- inspect service health
+- interact with integrations
+- observe governance actions
+- manage operational workflows
+
+---
+
+### CLI
+
+The command-line interface provides deterministic operational tooling for scripting, automation, and infrastructure control.
+
+It exposes the same dispatch functionality used by the backend.
+
+---
+
+# Unified Dispatch Model
+
+All service interactions are routed through a single gateway endpoint.
+
+
+POST /dispatch
+
+
+The destination system is selected using a target identifier.
+
+Example targets:
+
+
+evm
+xlayer
+sui
+cardano
+ai
+
+
+This architecture allows the system to remain extensible while keeping the integration model consistent across services.
 
 ---
 
@@ -76,53 +172,31 @@ Start the backend service.
 node apps/backend/src/server.js
 
 
-In another terminal start the web interface.
+Start the frontend interface.
 
 
 node apps/frontend/src/server.js
 
 
-You can then interact with the system through the CLI.
+Use the CLI to interact with the system.
 
 
 node apps/cli/src/cli.js status
 
+
+Example dispatch command.
+
+
 node apps/cli/src/cli.js dispatch evm wallet.balance '{"address":"0x123"}'
 
 
-The dispatch command routes a request through the backend to the appropriate service adapter.
+The CLI forwards the request to the backend, which routes the action to the appropriate adapter.
 
 ---
 
-# EVM Integration Migration Plan
+# Integration Architecture
 
-The repository is intended to eventually host the EVM related tooling that currently exists in a separate repository.
-
-A gradual migration strategy is recommended.
-
-Step 1 — Code Relocation
-
-Move EVM backend logic into
-
-
-apps/backend/src/adapters/evm/
-
-
-Move EVM CLI commands into
-
-
-apps/cli/src/commands/evm/
-
-
-Move EVM web modules into
-
-
-apps/frontend/src/modules/evm/
-
-
-Step 2 — Adapter Standardization
-
-Each external service should expose a minimal interface.
+External services are integrated through adapters that expose a minimal standardized interface.
 
 
 health()
@@ -130,80 +204,67 @@ dispatch(action, payload)
 normalizeError(error)
 
 
-This ensures all integrations behave consistently from the perspective of the gateway.
+This ensures that all blockchain networks, AI systems, and external services behave consistently from the perspective of the gateway.
 
-Step 3 — Endpoint Normalization
+---
 
-Instead of multiple service-specific endpoints, external calls should be routed through a single endpoint.
+# Ecosystem Expansion Strategy
 
+The integration roadmap follows a phased approach.
 
-POST /dispatch
+### Phase 1 — EVM Integration
 
+Initial infrastructure will focus on integrating EVM-compatible networks including XLayer.
 
-The target service is selected through the `target` field, for example:
+### Phase 2 — Multi-Chain Expansion
 
+Additional blockchain environments such as Sui and Cardano will be connected through the adapter model.
 
-evm
-solana
-btc
+### Phase 3 — AI Services
 
+AI agents and automation tools will be integrated into the orchestration layer.
 
-Step 4 — CLI Consolidation
+### Phase 4 — DAO Governance Integration
 
-Operational commands from multiple repositories can gradually be unified under a single CLI interface.
-
-Example usage:
-
-
-aoxcon dispatch evm wallet.balance --payload '{...}'
-
-
-Step 5 — Configuration Centralization
-
-Service endpoints and credentials should be managed through
-
-
-config/services.json
-
-
-combined with environment variables.
-
-Step 6 — Gradual Migration
-
-The recommended migration order is:
-
-1. integrate the EVM services first
-2. validate dispatch and adapter behavior
-3. onboard additional chain services using the same adapter pattern
+Governance systems will be connected to operational services, allowing community decisions to influence ecosystem infrastructure.
 
 ---
 
 # Current Status
 
-At the moment this repository contains a **working integration skeleton**.
+The repository currently contains an early infrastructure skeleton.
 
-The dispatch endpoint currently returns stub responses instead of calling real upstream services.  
-This allows the system architecture to be exercised before full service integration.
+Core architectural components are implemented, but some service integrations still return stub responses while adapters are under development.
 
-As adapters are implemented, the stub logic inside
-
-
-apps/backend/src/server.js
-
-
-can be replaced with calls to the appropriate service adapter.
+This approach allows the system architecture and dispatch model to be validated before full integration of upstream services.
 
 ---
 
-# Development Notes
+# Development Direction
 
-The project is intentionally minimal at this stage.
+The immediate development focus includes:
 
-The immediate focus is on:
+- stabilizing the dispatch architecture
+- integrating EVM infrastructure
+- expanding multi-chain adapters
+- developing the ecosystem management interface
+- connecting AI operational services
+- enabling DAO governance interactions
 
-- stabilizing the dispatch model
-- unifying CLI operations
-- integrating EVM services
-- gradually connecting additional chain integrations
+As the ecosystem evolves, AoxCon will continue to expand as the operational coordination layer of the AOXC environment.
 
-The architecture may evolve as these components mature.
+---
+
+# Philosophy
+
+AoxCon reflects the broader AOXC philosophy:
+
+**decentralized ownership, coordinated infrastructure, and community-driven governance.**
+
+The system is not designed to centralize control, but to **provide a shared operational surface through which decentralized actors can coordinate complex systems**.
+
+---
+
+# License
+
+MIT License
