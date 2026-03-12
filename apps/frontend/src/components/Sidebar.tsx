@@ -1,29 +1,49 @@
-import React, { useMemo, useEffect, useState } from 'react';
+import React, { useMemo, useEffect, useState, memo } from 'react';
 import { useAoxcStore } from '../store/useAoxcStore';
 import { cn } from '../lib/utils';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { 
-  LayoutDashboard, Wallet, ShieldCheck, Download,
+  LayoutDashboard, Wallet, ShieldCheck, 
   AlertCircle, FileText, Network, Users, BarChart3,
-  GitBranch, Brain, ChevronLeft, ChevronRight, Fingerprint
+  GitBranch, Brain, ChevronLeft, ChevronRight, Fingerprint,
+  LucideIcon
 } from 'lucide-react';
 
+// --- Types ---
+interface MenuItem {
+  id: string;
+  label: string;
+  icon: LucideIcon;
+  color: 'primary' | 'blue' | 'pink' | 'purple' | 'orange';
+  highlight?: boolean;
+  count?: number;
+  isPanelTrigger?: boolean;
+}
+
+interface SidebarItemProps {
+  item: MenuItem;
+  isActive: boolean;
+  isCollapsed: boolean;
+  onClick: () => void;
+}
+
 /**
- * @title AOXC Neural Navigation Sidebar v2.5 (Production Ready)
- * @notice Integrated with RightPanel trigger for real-time notification stream.
+ * @title AOXC Neural Navigation Sidebar v2.5
+ * @description Eksiksiz tip tanımlamalı ve performans optimize versiyon.
  */
-export const Sidebar = () => {
+export const Sidebar: React.FC = () => {
   const { 
     activeView, setActiveView, pendingTransactions, 
     permissionLevel, setPermissionLevel, notifications,
     isSidebarCollapsed, toggleSidebar,
-    setIsRightPanelOpen // Kritik Bağlantı: Sağ paneli açar
+    setIsRightPanelOpen 
   } = useAoxcStore();
   
   const { t } = useTranslation();
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState<boolean>(false);
 
+  // Responsive Check
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
     checkMobile();
@@ -31,7 +51,8 @@ export const Sidebar = () => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  const menuItems = useMemo(() => [
+  // Menu items memoization
+  const menuItems = useMemo<MenuItem[]>(() => [
     { id: 'dashboard', label: t('sidebar.ledger') || 'Main Ledger', icon: LayoutDashboard, color: "primary" },
     { id: 'aoxcan', label: 'AOXCAN CORE', icon: Brain, highlight: true, color: "primary" },
     { id: 'finance', label: t('sidebar.finance') || 'Finance', icon: Wallet, color: "blue" },
@@ -44,7 +65,7 @@ export const Sidebar = () => {
       icon: AlertCircle, 
       color: "orange", 
       count: notifications.filter(n => n.type === 'error').length,
-      isPanelTrigger: true // Bu öğe sağ paneli kontrol eder
+      isPanelTrigger: true 
     },
     { id: 'pending', label: t('sidebar.pending') || 'Pending', icon: FileText, color: "primary", count: pendingTransactions.length },
     { id: 'registry', label: t('sidebar.registry') || 'Registry Map', icon: Network, color: "pink" },
@@ -52,11 +73,9 @@ export const Sidebar = () => {
   ], [notifications, pendingTransactions, t]);
 
   const handleNavClick = (id: string, isPanelTrigger?: boolean) => {
-    setActiveView(id as any);
-    if (isPanelTrigger) {
-      setIsRightPanelOpen(true);
-    } else {
-      setIsRightPanelOpen(false); // Diğer sayfalarda sağ paneli kapatır
+    setActiveView(id as any); // Store'daki view tipine göre 'any' güncellenebilir
+    if (setIsRightPanelOpen) {
+      setIsRightPanelOpen(!!isPanelTrigger);
     }
   };
 
@@ -71,7 +90,7 @@ export const Sidebar = () => {
       {/* COMMANDER TOGGLE */}
       <button 
         onClick={toggleSidebar}
-        className="absolute -right-3 top-8 w-6 h-10 bg-primary rounded-lg hidden md:flex items-center justify-center text-black hover:bg-primary-hover transition-all shadow-[0_0_20px_var(--color-primary-glow)] z-50"
+        className="absolute -right-3 top-8 w-6 h-10 bg-primary rounded-lg hidden md:flex items-center justify-center text-black hover:bg-primary-hover transition-all shadow-[0_0_20px_rgba(var(--color-primary-rgb),0.3)] z-50"
       >
         {isSidebarCollapsed ? <ChevronRight size={14} strokeWidth={3} /> : <ChevronLeft size={14} strokeWidth={3} />}
       </button>
@@ -103,9 +122,9 @@ export const Sidebar = () => {
         </nav>
       </div>
 
-      {/* FOOTER: RBAC */}
-      <div className="mt-auto p-5 space-y-4 border-t border-white/5 bg-black/40 text-[10px]">
-        <div className={cn("bg-white/[0.02] rounded-2xl border border-white/5 p-4", isSidebarCollapsed && !isMobile ? "p-2" : "space-y-3")}>
+      {/* FOOTER: RBAC (Role Based Access Control) */}
+      <div className="mt-auto p-5 space-y-4 border-t border-white/5 bg-black/40">
+        <div className={cn("bg-white/[0.02] rounded-2xl border border-white/5 p-4 transition-all", isSidebarCollapsed && !isMobile ? "p-2" : "space-y-3")}>
           {!isSidebarCollapsed && (
             <div className="flex items-center justify-between px-1">
                <span className="text-[8px] font-black text-white/30 uppercase tracking-[0.2em]">Access_Level</span>
@@ -114,18 +133,18 @@ export const Sidebar = () => {
           )}
           
           <div className={cn("flex gap-1.5", isSidebarCollapsed && !isMobile ? "flex-col" : "flex-row")}>
-            {[0, 1, 2].map((level) => (
+            {(['G', 'O', 'A'] as const).map((label, index) => (
               <button
-                key={level}
-                onClick={() => setPermissionLevel(level)}
+                key={label}
+                onClick={() => setPermissionLevel(index)}
                 className={cn(
-                  "flex items-center justify-center rounded-xl transition-all duration-300 font-black flex-1 py-2.5",
-                  permissionLevel === level 
-                    ? "bg-primary text-black shadow-[0_0_15px_var(--color-primary-glow)]" 
+                  "flex items-center justify-center rounded-xl transition-all duration-300 font-black flex-1 py-2.5 text-[10px]",
+                  permissionLevel === index 
+                    ? "bg-primary text-black shadow-lg shadow-primary/20" 
                     : "bg-white/5 text-white/20 hover:bg-white/10"
                 )}
               >
-                {level === 0 ? 'G' : level === 1 ? 'O' : 'A'}{!isSidebarCollapsed && (level === 0 ? 'ST' : level === 1 ? 'PR' : 'DM')}
+                {label}{!isSidebarCollapsed && (label === 'G' ? 'ST' : label === 'O' ? 'PR' : 'DM')}
               </button>
             ))}
           </div>
@@ -136,15 +155,21 @@ export const Sidebar = () => {
 };
 
 // --- Atomic Item Component ---
-const SidebarItem = ({ item, isActive, isCollapsed, onClick }: any) => {
-  const colorMap: any = {
-    primary: "text-primary", blue: "text-blue-500", pink: "text-pink-500",
-    purple: "text-purple-500", orange: "text-orange-500"
+const SidebarItem = memo(({ item, isActive, isCollapsed, onClick }: SidebarItemProps) => {
+  const colorMap = {
+    primary: "text-primary",
+    blue: "text-blue-500",
+    pink: "text-pink-500",
+    purple: "text-purple-500",
+    orange: "text-orange-500"
   };
 
-  const bgMap: any = {
-    primary: "bg-primary/10", blue: "bg-blue-500/10", pink: "bg-pink-500/10",
-    purple: "bg-purple-500/10", orange: "bg-orange-500/10"
+  const bgMap = {
+    primary: "bg-primary/10",
+    blue: "bg-blue-500/10",
+    pink: "bg-pink-500/10",
+    purple: "bg-purple-500/10",
+    orange: "bg-orange-500/10"
   };
 
   return (
@@ -156,12 +181,14 @@ const SidebarItem = ({ item, isActive, isCollapsed, onClick }: any) => {
         isCollapsed ? "justify-center" : "justify-start"
       )}
     >
-      {isActive && (
-        <motion.div 
-          layoutId="sidebarActiveLine"
-          className="absolute left-0 w-1 h-6 rounded-r-full bg-primary" 
-        />
-      )}
+      <AnimatePresence>
+        {isActive && (
+          <motion.div 
+            layoutId="sidebarActiveLine"
+            className="absolute left-0 w-1 h-6 rounded-r-full bg-primary" 
+          />
+        )}
+      </AnimatePresence>
 
       <item.icon 
         size={20} 
@@ -174,23 +201,25 @@ const SidebarItem = ({ item, isActive, isCollapsed, onClick }: any) => {
 
       {!isCollapsed && (
         <span className={cn(
-          "ml-4 text-[10px] font-black uppercase tracking-widest truncate",
+          "ml-4 text-[10px] font-black uppercase tracking-widest truncate transition-colors",
           isActive ? "text-white" : "text-white/40 group-hover:text-white/70"
         )}>
-          {typeof item.label === 'string' ? item.label : 'N/A'}
+          {item.label}
         </span>
       )}
 
-      {item.count ? (
+      {item.count !== undefined && item.count > 0 && (
         <div className={cn(
           "absolute flex items-center justify-center font-black transition-all",
           isCollapsed 
-            ? "top-2 right-2 w-2 h-2 rounded-full bg-rose-500 animate-ping" 
+            ? "top-2 right-2 w-2 h-2 rounded-full bg-rose-500 animate-pulse" 
             : "right-4 px-2 py-0.5 rounded-lg bg-primary text-black text-[9px]"
         )}>
           {!isCollapsed && item.count}
         </div>
-      ) : null}
+      )}
     </button>
   );
-};
+});
+
+SidebarItem.displayName = 'SidebarItem';

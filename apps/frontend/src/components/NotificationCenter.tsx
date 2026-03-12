@@ -1,13 +1,14 @@
 import React from 'react';
-import { useAoxcStore } from '../store/useAoxcStore';
-import { motion, AnimatePresence } from 'motion/react';
+import { useAoxcStore, Notification } from '../store/useAoxcStore'; // Notification tipini de import et
+import { motion, AnimatePresence } from 'framer-motion'; // motion/react yerine standart framer-motion (projenle uyumlu olması için)
 import { AlertCircle, CheckCircle2, Info, XCircle, Trash2, Bell, ShieldAlert } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useTranslation } from 'react-i18next';
 
 /**
  * @title AOXC Notification Center
- * @task Sadece sistem bildirimlerini izler, listeler ve temizler.
+ * @task Sistem bildirimlerini izler, listeler ve temizler.
+ * @fix TypeScript TS2345 hatası giderildi (Functional Update implementasyonu).
  */
 export const NotificationCenter: React.FC = () => {
   const notifications = useAoxcStore((state) => state.notifications) || [];
@@ -15,12 +16,13 @@ export const NotificationCenter: React.FC = () => {
   const { t } = useTranslation();
 
   const clearNotification = (id: string) => {
-    setNotifications(notifications.filter((n) => n.id !== id));
+    // DOĞRU KULLANIM: Bir fonksiyon gönderiyoruz (prev => ...)
+    setNotifications((prev: Notification[]) => prev.filter((n) => n.id !== id));
   };
 
   const clearAll = () => {
-    // Güvenlik protokolü: Sadece hatalar (error) saklanır, gerisi temizlenir.
-    setNotifications(notifications.filter((n) => n.type === 'error'));
+    // Güvenlik protokolü: Sadece hatalar (error) saklanır.
+    setNotifications((prev: Notification[]) => prev.filter((n) => n.type === 'error'));
   };
 
   const icons = {
