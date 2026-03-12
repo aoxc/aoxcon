@@ -111,6 +111,9 @@ def require_permission(command_name: str) -> None:
     if "*" not in allowed and command_name not in allowed:
         AUDIT.append("authz_denied", {"role": CFG.role, "command": command_name})
         raise click.ClickException(t("role_denied", role=CFG.role, command=command_name))
+        raise click.ClickException(
+            f"Role '{CFG.role}' cannot run '{command_name}'. Set AOXC_ROLE=operator/admin when authorized."
+        )
 
 
 def masked_token(token: str) -> str:
@@ -139,6 +142,7 @@ def call_backend(method: str, path: str, payload: Optional[Dict[str, Any]] = Non
     except requests.RequestException as exc:
         AUDIT.append("request_error", {"method": method, "path": path, "error": str(exc)})
         raise click.ClickException(t("backend_unreachable", error=exc)) from exc
+        raise click.ClickException(f"Backend unreachable: {exc}") from exc
 
     AUDIT.append("request", {"method": method, "path": path, "status": response.status_code})
     return response
@@ -152,6 +156,10 @@ def print_banner() -> None:
             f"Backend: [green]{CFG.backend_url}[/green]  |  Role: [magenta]{CFG.role}[/magenta]  |  Strict: [yellow]{CFG.strict_mode}[/yellow]\n"
             f"Token: [blue]{masked_token(CFG.sentinel_token)}[/blue]  |  AuditLog: [white]{CFG.audit_log_path}[/white]",
             title=t("banner_title"),
+            "[bold white]AOXC Sentinel CLI / Mainnet Hardened Console[/bold white]\n"
+            f"Backend: [green]{CFG.backend_url}[/green]  |  Role: [magenta]{CFG.role}[/magenta]  |  Strict: [yellow]{CFG.strict_mode}[/yellow]\n"
+            f"Token: [blue]{masked_token(CFG.sentinel_token)}[/blue]  |  AuditLog: [white]{CFG.audit_log_path}[/white]",
+            title="NEURAL OPERATIONS TERMINAL",
             border_style="bright_blue",
         )
     )
@@ -164,6 +172,16 @@ def cli(ctx: click.Context) -> None:
     if ctx.invoked_subcommand is None:
         print_banner()
         console.print(f"[bold]{t("quick_start")}[/bold]")
+
+
+
+@click.group(invoke_without_command=True)
+@click.pass_context
+def cli(ctx: click.Context) -> None:
+    """AOXC ultra-operational CLI with role controls, audit chain, and interactive command console."""
+    if ctx.invoked_subcommand is None:
+        print_banner()
+        console.print("[bold]Hızlı başlangıç:[/bold] sentinel.py help-center")
 
 
 @cli.command(name="logo")
@@ -185,6 +203,12 @@ def status() -> None:
     table = Table(title=t("status_title"))
     table.add_column(t("col_field"), style="cyan")
     table.add_column(t("col_value"), style="white")
+        raise click.ClickException(f"Health check failed ({resp.status_code}): {resp.text[:200]}")
+
+    data = resp.json()
+    table = Table(title="AOXC Mainnet Status")
+    table.add_column("Field", style="cyan")
+    table.add_column("Value", style="white")
     table.add_row("status", str(data.get("status", "unknown")))
     table.add_row("service", str(data.get("service", "sentinel-api")))
     table.add_row("version", str(data.get("version", "v1")))
@@ -201,6 +225,9 @@ def preflight() -> None:
     table = Table(title=t("preflight_title"))
     table.add_column(t("col_check"), style="cyan")
     table.add_column(t("col_result"), style="white")
+    table = Table(title="AOXC Preflight / Security")
+    table.add_column("Check", style="cyan")
+    table.add_column("Result", style="white")
 
     table.add_row("Backend URL", CFG.backend_url)
     table.add_row("Token configured", "yes" if CFG.sentinel_token else "no")
@@ -233,6 +260,12 @@ def audit(tx_hash: str, context: str) -> None:
     table = Table(title=t("sentinel_analysis"))
     table.add_column(t("col_field"), style="cyan")
     table.add_column(t("col_value"), style="white")
+        raise click.ClickException(f"Audit failed ({resp.status_code}): {resp.text[:250]}")
+
+    data = resp.json()
+    table = Table(title="Sentinel Analysis")
+    table.add_column("Field", style="cyan")
+    table.add_column("Value", style="white")
     for key in ["risk", "action", "reason", "provider"]:
         table.add_row(key, str(data.get(key)))
     console.print(table)
@@ -248,10 +281,13 @@ def dispatch(target: str, action: str, payload: str) -> None:
     if CFG.strict_mode and action in DANGEROUS_ACTIONS:
         raise click.ClickException(t("dispatch_blocked", action=action))
 
+        raise click.ClickException(f"Action '{action}' blocked in strict mode.")
+
     try:
         parsed_payload = json.loads(payload)
     except json.JSONDecodeError as exc:
         raise click.ClickException(t("invalid_json", error=exc)) from exc
+        raise click.ClickException(f"Invalid JSON payload: {exc}") from exc
 
     request_payload = {"target": target, "action": action, "payload": parsed_payload}
     resp = call_backend("POST", "/dispatch", payload=request_payload, timeout=15)
@@ -259,6 +295,9 @@ def dispatch(target: str, action: str, payload: str) -> None:
         raise click.ClickException(t("dispatch_failed", status=resp.status_code, body=resp.text[:250]))
 
     console.print(Panel.fit(resp.text[:800], title=t("dispatch_result"), border_style="green"))
+        raise click.ClickException(f"Dispatch failed ({resp.status_code}): {resp.text[:250]}")
+
+    console.print(Panel.fit(resp.text[:800], title="Dispatch Result", border_style="green"))
 
 
 @cli.command()
@@ -316,6 +355,40 @@ def languages() -> None:
         table.add_row(code, name)
     console.print(table)
     console.print(f"[green]{t('active_language')}: {LANG}[/green]")
+        raise click.ClickException(f"Repo operation failed ({resp.status_code}): {resp.text[:250]}")
+    console.print(Panel.fit(resp.text[:800], title=f"Repos/{operation}", border_style="cyan"))
+
+
+@cli.command()
+@click.argument("instruction")
+@click.option("--scope", default="global", help="Prompt scope (repo/global/mainnet)")
+def prompt(instruction: str, scope: str) -> None:
+    """Submit AI prompt intents with audit trail and explicit scope control."""
+    require_permission("prompt")
+    payload = {"instruction": instruction, "scope": scope}
+    resp = call_backend("POST", "/prompts/submit", payload=payload, timeout=15)
+    if not resp.ok:
+        raise click.ClickException(f"Prompt submit failed ({resp.status_code}): {resp.text[:250]}")
+    console.print(Panel.fit(resp.text[:800], title="Prompt Dispatch", border_style="magenta"))
+
+
+@cli.command(name="help-center")
+def help_center() -> None:
+    """Show command matrix and hardened operational guidance."""
+    require_permission("help-center")
+    table = Table(title="AOXC Help Center")
+    table.add_column("Command", style="cyan")
+    table.add_column("Purpose", style="white")
+    table.add_row("status", "Backend health, service/version profile")
+    table.add_row("preflight", "Security and runtime readiness checks")
+    table.add_row("audit <tx_hash>", "AI risk analysis for transaction")
+    table.add_row("dispatch <target> <action>", "Unified operational routing")
+    table.add_row("repos <list|health|sync>", "Multi-repository orchestration")
+    table.add_row("prompt <instruction>", "Instruction submission gateway")
+    table.add_row("shell", "Interactive terminal window mode")
+    table.add_row("logo", "Render startup mainnet banner")
+    console.print(table)
+    console.print("[yellow]Not:[/yellow] Strict mode açıkken tehlikeli aksiyonlar engellenir.")
 
 
 @cli.command()
@@ -324,11 +397,13 @@ def shell() -> None:
     require_permission("shell")
     print_banner()
     console.print(f"[bold green]{t('interactive_mode')}[/bold green]")
+    console.print("[bold green]Interactive mode[/bold green] | Çıkış: exit")
     while True:
         try:
             raw = console.input("[bold cyan]aoxcon> [/bold cyan]")
         except (EOFError, KeyboardInterrupt):
             console.print(f"\n[yellow]{t('terminal_closed')}[/yellow]")
+            console.print("\n[yellow]Terminal kapatıldı.[/yellow]")
             break
 
         cmd = raw.strip()
@@ -340,6 +415,7 @@ def shell() -> None:
         AUDIT.append("shell_command", {"raw": cmd})
         if "&&" in cmd or ";" in cmd:
             console.print(f"[red]{t('chaining_blocked')}[/red]")
+            console.print("[red]Komut zinciri güvenlik nedeniyle engellendi.[/red]")
             continue
 
         args = shlex.split(cmd)
@@ -355,6 +431,7 @@ def shell() -> None:
         except Exception as exc:  # last-resort visibility
             AUDIT.append("shell_error", {"error": str(exc)})
             console.print(f"[red]{t('command_error', error=exc)}[/red]")
+            console.print(f"[red]Komut hatası: {exc}[/red]")
 
 
 if __name__ == "__main__":
