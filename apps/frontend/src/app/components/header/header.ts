@@ -1,67 +1,75 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { App } from '../../app';
 import { WalletService, WalletType } from '../../wallet.service';
 import { AIService } from '../../ai.service';
 import { LanguageService, LanguageCode } from '../../language.service';
 
+/**
+ * SOVEREIGN HEADER ENGINE
+ * Orchestrates global state, neural model selection, and multi-chain wallet links.
+ * Optimization: ChangeDetectionStrategy.OnPush enabled.
+ */
 @Component({
   selector: 'app-header',
   standalone: true,
   imports: [CommonModule],
   templateUrl: './header.html',
-  styleUrl: './header.css'
+  styleUrl: './header.css',
+  // FIX: Satisfies @angular-eslint/prefer-on-push-component-change-detection
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class HeaderComponent {
-  // Service Injection
-  public app = inject(App);
-  public walletService = inject(WalletService);
-  public aiService = inject(AIService);
-  public langService = inject(LanguageService);
+  // --- CORE SERVICES ---
+  public readonly app = inject(App);
+  public readonly walletService = inject(WalletService);
+  public readonly aiService = inject(AIService);
+  public readonly langService = inject(LanguageService);
 
-  // UI State Signals (Dropdownların açık/kapalı durumu)
-  showWalletModal = signal(false);
-  showSearchDropdown = signal(false);
-  showAISelector = signal(false);
-  showLangSelector = signal(false);
-  selectedSearchNetwork = signal<string>('All Networks');
+  // --- UI TELEMETRY SIGNALS ---
+  public readonly showWalletModal = signal(false);
+  public readonly showSearchDropdown = signal(false);
+  public readonly showAISelector = signal(false);
+  public readonly showLangSelector = signal(false);
+  public readonly selectedSearchNetwork = signal<string>('All Networks');
 
-  // Computed: Cüzdan tipinin baş harfi (E, M, P)
-  walletInitial = computed(() => {
+  // --- COMPUTED STATES ---
+  public readonly walletInitial = computed(() => {
     const wallet = this.walletService.wallet();
     return (wallet.connected && wallet.type) ? wallet.type.charAt(0).toUpperCase() : 'N';
   });
 
-  networks = ['All Networks', 'EVM Engine', 'Move Module', 'Plutus Ledger'];
+  public readonly networks: string[] = ['All Networks', 'EVM Engine', 'Move Module', 'Plutus Ledger'];
 
-  // --- METODLAR (Tetikleyiciler) ---
+  // --- INTERACTIVE METHODS ---
 
-  toggleLangSelector() { this.showLangSelector.update(v => !v); }
-  toggleAISelector() { this.showAISelector.update(v => !v); }
-  toggleSearchDropdown() { this.showSearchDropdown.update(v => !v); }
-  toggleWalletModal() { this.showWalletModal.update(v => !v); }
+  public toggleLangSelector(): void { this.showLangSelector.update(v => !v); }
+  public toggleAISelector(): void { this.showAISelector.update(v => !v); }
+  public toggleSearchDropdown(): void { this.showSearchDropdown.update(v => !v); }
+  public toggleWalletModal(): void { this.showWalletModal.update(v => !v); }
 
-  selectLanguage(langCode: string) {
+  public selectLanguage(langCode: string): void {
     this.langService.setLanguage(langCode as LanguageCode);
     this.showLangSelector.set(false);
   }
 
-  selectSearchNetwork(net: string) {
+  public selectSearchNetwork(net: string): void {
     this.selectedSearchNetwork.set(net);
     this.showSearchDropdown.set(false);
   }
 
-  selectAIModel(modelId: string) {
+  public selectAIModel(modelId: string): void {
     this.aiService.selectModel(modelId);
     this.showAISelector.set(false);
   }
 
-  async connectWallet(type: string) {
+  public async connectWallet(type: string): Promise<void> {
     try {
       await this.walletService.connect(type as WalletType);
       this.showWalletModal.set(false);
-    } catch (err) {
-      console.error('Wallet connection failed', err);
+    } catch (_error: unknown) {
+      // FIX: Standard logging for infrastructure failures
+      console.error('[AOXC-HANDSHAKE] Wallet link failed:', _error);
     }
   }
 }

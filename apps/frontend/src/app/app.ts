@@ -10,7 +10,7 @@ import {
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { NetworkService } from './network.service';
 import { ThemeService, NetworkTheme } from './theme.service';
-import { AIService } from './ai.service';
+import { AIService, type LogSeverity } from './ai.service'; // LogSeverity tipini import ettik
 
 // Components
 import { HeaderComponent } from './components/header/header';
@@ -46,11 +46,12 @@ export class App implements OnDestroy {
   public readonly themeService = inject(ThemeService);
   public readonly aiService = inject(AIService);
   
-  private refreshInterval: any;
+  // FIX: Unexpected any -> Replaced with safe Node.js/Browser timeout type
+  private refreshInterval: ReturnType<typeof setInterval> | undefined;
 
   // --- UI STATE ---
-  readonly activeTab = signal<'overview' | 'networks' | 'ai-builder' | 'dao'>('overview');
-  readonly activeNetwork = signal<'evm' | 'move' | 'plutus' | null>(null);
+  public readonly activeTab = signal<'overview' | 'networks' | 'ai-builder' | 'dao'>('overview');
+  public readonly activeNetwork = signal<'evm' | 'move' | 'plutus' | null>(null);
   
   constructor() {
     /**
@@ -70,18 +71,17 @@ export class App implements OnDestroy {
 
     /**
      * INITIALIZATION & BACKGROUND JOBS
-     * Sadece tarayıcıda çalışarak ağ verilerini ve ajan loglarını yönetir.
      */
     if (isPlatformBrowser(this.platformId)) {
       this.initBackgroundProcess();
     }
   }
 
-  private initBackgroundProcess() {
-    // İlk açılış logu
-    this.aiService.addLog('System-Core', 'Neural-Nexus Interface initialized.', 'success' as any);
+  private initBackgroundProcess(): void {
+    // FIX: 'success' as any -> Typed with LogSeverity
+    this.aiService.addLog('System-Core', 'Neural-Nexus Interface initialized.', 'success' as LogSeverity);
 
-    // Global Sync Cycle: Her 30 saniyede bir ağ denetimi ve rastgele simülasyon logu
+    // Global Sync Cycle
     this.refreshInterval = setInterval(() => {
       this.networkService.refreshAll();
       this.generateNeuralTraffic();
@@ -90,21 +90,22 @@ export class App implements OnDestroy {
 
   // --- ACTIONS ---
 
-  setTab(tab: 'overview' | 'networks' | 'ai-builder' | 'dao') {
+  public setTab(tab: 'overview' | 'networks' | 'ai-builder' | 'dao'): void {
     this.activeTab.set(tab);
-    if (tab !== 'networks') this.activeNetwork.set(null);
+    if (tab !== 'networks') {
+      this.activeNetwork.set(null);
+    }
   }
 
-  setNetwork(network: 'evm' | 'move' | 'plutus') {
+  public setNetwork(network: 'evm' | 'move' | 'plutus'): void {
     this.activeNetwork.set(network);
     this.activeTab.set('networks');
   }
 
   /**
    * 🛰️ NEURAL TRAFFIC SIMULATOR
-   * Sistemin "yaşadığını" gösteren rastgele ajan aktiviteleri üretir.
    */
-  private generateNeuralTraffic() {
+  private generateNeuralTraffic(): void {
     const modules = ['AI-Sentinel', 'DAO-Core', 'DApp-Engine', 'Neural-Nexus', 'Synapse-Core'];
     const messages = [
       'Neural weights optimized for EVM Engine',
@@ -118,12 +119,11 @@ export class App implements OnDestroy {
     const randomModule = modules[Math.floor(Math.random() * modules.length)];
     const randomMsg = messages[Math.floor(Math.random() * messages.length)];
     
-    // Logları merkezi AIService'e gönderiyoruz
-    this.aiService.addLog(randomModule, randomMsg, 'info');
+    this.aiService.addLog(randomModule, randomMsg, 'info' as LogSeverity);
   }
 
-  ngOnDestroy() {
-    // Audit: Memory leak önleme
+  public ngOnDestroy(): void {
+    // Audit: Memory leak prevention
     if (this.refreshInterval) {
       clearInterval(this.refreshInterval);
     }

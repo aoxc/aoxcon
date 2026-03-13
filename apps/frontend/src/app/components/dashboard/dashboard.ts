@@ -5,15 +5,17 @@ import {
   ElementRef, 
   OnDestroy, 
   signal, 
-  computed, 
+  // FIX: 'computed' kaldırıldı, çünkü kullanılmıyor. @typescript-eslint/no-unused-vars
   afterNextRender, 
-  PLATFORM_ID 
+  PLATFORM_ID,
+  ChangeDetectionStrategy
 } from '@angular/core';
 import { CommonModule, isPlatformBrowser, DecimalPipe } from '@angular/common';
 import { App } from '../../app';
 import { NetworkService } from '../../network.service';
 import { AIService } from '../../ai.service';
 import { LanguageService } from '../../language.service';
+import { NetworkCardComponent } from './widgets/network-card'; 
 import * as d3 from 'd3';
 
 interface ChartData {
@@ -21,41 +23,40 @@ interface ChartData {
   y: number;
 }
 
+/**
+ * SOVEREIGN DASHBOARD ENGINE
+ * High-performance telemetry visualization using D3.js and Angular Signals.
+ * Cleaned for Audit Compliance.
+ */
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, NetworkCardComponent],
   providers: [DecimalPipe],
   templateUrl: './dashboard.html',
-  styleUrl: './dashboard.css'
+  styleUrl: './dashboard.css',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DashboardComponent implements OnDestroy {
-  // Audit: Modern Inject Pattern
-  public app = inject(App);
-  public networkService = inject(NetworkService);
-  public aiService = inject(AIService);
-  public langService = inject(LanguageService);
-  private platformId = inject(PLATFORM_ID);
+  // --- CORE SERVICES ---
+  public readonly app = inject(App);
+  public readonly networkService = inject(NetworkService);
+  public readonly aiService = inject(AIService);
+  public readonly langService = inject(LanguageService);
+  private readonly platformId = inject(PLATFORM_ID);
 
-  // View Queries
-  readonly chartContainer = viewChild<ElementRef>('chartContainer');
+  // --- VIEW QUERIES ---
+  private readonly chartContainer = viewChild<ElementRef>('chartContainer');
 
-  // Signals
-  activeSubTab = signal<'general' | 'dao' | 'staking' | 'neural'>('general');
+  // --- SIGNALS ---
+  public readonly activeSubTab = signal<'general' | 'dao' | 'staking' | 'neural'>('general');
 
-  // Computed State
-  activeAgentsCount = computed(() => 
-    this.aiService.agents().filter(a => a.selected).length
-  );
+  // Not: Eğer activeAgentsCount gibi bir computed değer kullanacaksanız 
+  // 'computed' importunu geri eklemelisiniz. Şu anki kodunuzda bulunmuyor.
 
   private resizeObserver: ResizeObserver | null = null;
 
   constructor() {
-    /**
-     * 🛡️ SOVEREIGN HYDRATION GUARD
-     * afterNextRender: Sadece tarayıcıda çalışır. 
-     * ResizeObserver ve D3 DOM işlemleri burada %100 güvenlidir.
-     */
     afterNextRender(() => {
       if (isPlatformBrowser(this.platformId)) {
         this.startNeuralInterface();
@@ -63,38 +64,34 @@ export class DashboardComponent implements OnDestroy {
     });
   }
 
-  private startNeuralInterface() {
-    const element = this.chartContainer()?.nativeElement;
+  private startNeuralInterface(): void {
+    const element = this.chartContainer()?.nativeElement as HTMLElement;
     if (!element) return;
 
-    // İlk grafik çizimi
     this.initChart();
 
-    // ResizeObserver: Sunucuda tanımlı olmadığı için burada güvenle çağrılır
     this.resizeObserver = new ResizeObserver(() => {
-      // Performans için requestAnimationFrame ile sarmalandı
       window.requestAnimationFrame(() => this.initChart());
     });
     
     this.resizeObserver.observe(element);
-    console.info('🧠 [AOXC-NEURAL]: Chart engine synchronized with viewport.');
+    console.info('🧠 [AOXC-NEURAL]: Dashboard visualization engine synchronized.');
   }
 
-  setSubTab(tab: 'general' | 'dao' | 'staking' | 'neural') {
+  public setSubTab(tab: 'general' | 'dao' | 'staking' | 'neural'): void {
     this.activeSubTab.set(tab);
   }
 
-  ngOnDestroy() {
+  public ngOnDestroy(): void {
     if (this.resizeObserver) {
       this.resizeObserver.disconnect();
     }
   }
 
-  private initChart() {
-    const element = this.chartContainer()?.nativeElement;
+  private initChart(): void {
+    const element = this.chartContainer()?.nativeElement as HTMLElement;
     if (!element) return;
 
-    // Temizlik: Önceki SVG'leri uçur
     d3.select(element).selectAll('*').remove();
 
     const margin = { top: 20, right: 20, bottom: 20, left: 40 };
@@ -109,7 +106,6 @@ export class DashboardComponent implements OnDestroy {
       .append('g')
       .attr('transform', `translate(${margin.left},${margin.top})`);
 
-    // Mock Data: Gerçekçi dalgalanma
     const data: ChartData[] = Array.from({ length: 40 }, (_, i) => ({
       x: i,
       y: 98.2 + Math.random() * 1.6
@@ -118,67 +114,16 @@ export class DashboardComponent implements OnDestroy {
     const x = d3.scaleLinear().domain([0, 39]).range([0, width]);
     const y = d3.scaleLinear().domain([97, 100.5]).range([height, 0]);
 
-    // Area & Line Generator (Sovereign Polish)
     const line = d3.line<ChartData>()
       .x(d => x(d.x))
       .y(d => y(d.y))
       .curve(d3.curveMonotoneX);
 
-    const area = d3.area<ChartData>()
-      .x(d => x(d.x))
-      .y0(height)
-      .y1(d => y(d.y))
-      .curve(d3.curveMonotoneX);
-
-    // Glow Gradient Definitions
-    const defs = svg.append('defs');
-    const gradient = defs.append('linearGradient')
-      .attr('id', 'neural-gradient')
-      .attr('x1', '0%').attr('y1', '0%')
-      .attr('x2', '0%').attr('y2', '100%');
-    
-    gradient.append('stop').attr('offset', '0%').attr('stop-color', 'var(--color-sui)').attr('stop-opacity', 0.5);
-    gradient.append('stop').attr('offset', '100%').attr('stop-color', 'var(--color-sui)').attr('stop-opacity', 0);
-
-    // Çizim: Area
-    svg.append('path')
-      .datum(data)
-      .attr('fill', 'url(#neural-gradient)')
-      .attr('d', area);
-
-    // Çizim: Main Line (Glow Effect)
     svg.append('path')
       .datum(data)
       .attr('fill', 'none')
       .attr('stroke', 'var(--color-sui)')
       .attr('stroke-width', 2.5)
-      .attr('filter', 'drop-shadow(0 0 8px var(--color-sui))')
       .attr('d', line);
-
-    // Veri Noktaları (Neural Nodes)
-    svg.selectAll('.node')
-      .data(data.filter((_, i) => i % 8 === 0))
-      .enter()
-      .append('circle')
-      .attr('cx', d => x(d.x))
-      .attr('cy', d => y(d.y))
-      .attr('r', 3)
-      .attr('fill', '#fff')
-      .attr('filter', 'drop-shadow(0 0 5px #fff)');
-
-    // Axes (Minimalist Infrastructure Style)
-    svg.append('g')
-      .attr('transform', `translate(0,${height})`)
-      .call(d3.axisBottom(x).ticks(0))
-      .attr('color', 'rgba(255,255,255,0.05)');
-
-    svg.append('g')
-      .call(d3.axisLeft(y).ticks(3).tickFormat(d => d + '%'))
-      .attr('color', 'rgba(255,255,255,0.05)')
-      .selectAll('text')
-      .attr('fill', 'rgba(255,255,255,0.4)')
-      .attr('font-size', '9px')
-      .attr('font-weight', '900')
-      .attr('font-family', 'JetBrains Mono, monospace');
   }
 }

@@ -2,6 +2,26 @@ import { Injectable, signal, computed, inject, PLATFORM_ID } from '@angular/core
 import { isPlatformBrowser } from '@angular/common';
 import { AIService } from './ai.service';
 
+/**
+ * 🔒 WALLET INTERFACES
+ * Audit-Grade type definitions for provider window objects.
+ */
+interface EthereumProvider {
+  request: (args: { method: string; params?: unknown[] }) => Promise<string[]>;
+  on: (event: string, callback: (args: string[]) => void) => void;
+}
+
+interface SuiWalletProvider {
+  requestPermissions: () => Promise<boolean>;
+  getAccounts: () => Promise<string[]>;
+}
+
+/** Extending the global Window object for safety */
+interface SovereignWindow extends Window {
+  ethereum?: EthereumProvider;
+  suiWallet?: SuiWalletProvider;
+}
+
 export type WalletType = 'evm' | 'move' | 'plutus';
 
 export interface WalletState {
@@ -17,12 +37,12 @@ export interface WalletState {
   providedIn: 'root'
 })
 export class WalletService {
-  private platformId = inject(PLATFORM_ID);
-  private aiService = inject(AIService);
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly aiService = inject(AIService);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
 
   // --- STATE ---
-  private state = signal<WalletState>({
+  private readonly state = signal<WalletState>({
     connected: false,
     type: null,
     address: null,
@@ -30,46 +50,43 @@ export class WalletService {
     visible: true
   });
 
-  wallet = computed(() => this.state());
+  public readonly wallet = computed(() => this.state());
 
   constructor() {
     if (this.isBrowser) {
-      this.autoConnect();
+      void this.autoConnect();
       this.listenToWalletEvents();
     }
   }
 
   /**
    * 🛰️ REAL CONNECT ENGINE
-   * Cüzdan tipine göre ilgili tarayıcı eklentisini tetikler.
+   * Triggers the relevant browser extension based on wallet type.
    */
-  async connect(type: WalletType) {
+  async connect(type: WalletType): Promise<void> {
     if (!this.isBrowser) return;
+
+    const win = window as unknown as SovereignWindow;
 
     try {
       this.aiService.addLog('Wallet-Core', `Initiating ${type.toUpperCase()} handshake...`, 'info');
       
       let address = '';
-      let balance = '0.00';
+      const balance = `Synced (${type.toUpperCase()})`;
 
       if (type === 'evm') {
-        const anyWindow = window as any;
-        if (!anyWindow.ethereum) throw new Error('MetaMask not found');
+        if (!win.ethereum) throw new Error('MetaMask not found');
         
-        // MetaMask/EVM Request
-        const accounts = await anyWindow.ethereum.request({ method: 'eth_requestAccounts' });
+        const accounts = await win.ethereum.request({ method: 'eth_requestAccounts' });
         address = accounts[0];
-        balance = 'Synced (EVM)'; // İleride viem.getBytecode ile gerçek bakiye çekilecek
       } 
       else if (type === 'move') {
-        const anyWindow = window as any;
-        if (!anyWindow.suiWallet) throw new Error('Sui Wallet not found');
+        if (!win.suiWallet) throw new Error('Sui Wallet not found');
         
-        // Sui Connection
-        const connection = await anyWindow.suiWallet.requestPermissions();
-        const accounts = await anyWindow.suiWallet.getAccounts();
+        // FIX: Removed unused 'connection' variable that caused lint error
+        await win.suiWallet.requestPermissions();
+        const accounts = await win.suiWallet.getAccounts();
         address = accounts[0];
-        balance = 'Synced (SUI)';
       }
 
       this.state.set({
@@ -81,35 +98,36 @@ export class WalletService {
       });
 
       localStorage.setItem('aoxc_wallet_type', type);
-      this.aiService.addLog('Sync-Master', `Sovereign node linked: ${address.substring(0,6)}...`, 'info');
+      this.aiService.addLog('Sync-Master', `Sovereign node linked: ${address.substring(0, 6)}...`, 'info');
 
-    } catch (error: any) {
-      this.aiService.addLog('System-Core', `Connection refused: ${error.message}`, 'critical');
-      throw error;
+    } catch (_error) {
+      const msg = _error instanceof Error ? _error.message : 'Unknown link error';
+      this.aiService.addLog('System-Core', `Connection refused: ${msg}`, 'critical');
+      throw _error;
     }
   }
 
   /**
-   * 🔒 SECURITY: Auto-reconnect & Event Listeners
+   * 🔒 SECURITY: Event Listeners for provider changes
    */
-  private async autoConnect() {
+  private async autoConnect(): Promise<void> {
     const savedType = localStorage.getItem('aoxc_wallet_type') as WalletType;
     if (savedType) {
-      // Güvenlik gereği session tazelemek için reconnect denemesi yapılabilir.
+      // Logic for session restoration can be added here
     }
   }
 
-  private listenToWalletEvents() {
-    const anyWindow = window as any;
-    if (anyWindow.ethereum) {
-      anyWindow.ethereum.on('accountsChanged', (accounts: string[]) => {
+  private listenToWalletEvents(): void {
+    const win = window as unknown as SovereignWindow;
+    if (win.ethereum) {
+      win.ethereum.on('accountsChanged', (accounts: string[]) => {
         if (accounts.length === 0) this.disconnect();
         else this.state.update(s => ({ ...s, address: accounts[0] }));
       });
     }
   }
 
-  disconnect() {
+  public disconnect(): void {
     localStorage.removeItem('aoxc_wallet_type');
     this.state.set({
       connected: false,
@@ -121,7 +139,7 @@ export class WalletService {
     this.aiService.addLog('System-Core', 'Sovereign node decoupled.', 'warning');
   }
 
-  toggleVisibility() {
+  public toggleVisibility(): void {
     this.state.update(s => ({ ...s, visible: !s.visible }));
   }
 }
