@@ -1,6 +1,6 @@
-import React, { memo, useMemo, useState, useCallback } from 'react';
+import React, { memo, useCallback, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Zap, Wallet, Globe, ChevronDown, Check, ShieldCheck, Activity } from 'lucide-react';
+import { Activity, Check, ChevronDown, Globe, ShieldCheck, Wallet, Zap } from 'lucide-react';
 import { ethers } from 'ethers';
 import { useTranslation } from 'react-i18next';
 
@@ -36,6 +36,13 @@ const TokenWidget = memo(({ ticker, isPrimary }: { ticker: MarketTicker; isPrima
   const isError = ticker.status === 'ERROR' || ticker.status === 'NO_DATA';
 
   return (
+    <div
+      className={cn(
+        'flex items-center h-11 border rounded-xl transition-all duration-300 hover:bg-white/[0.06] shrink-0',
+        isPrimary ? 'bg-cyan-500/10 border-cyan-400/30' : 'bg-white/[0.03] border-white/10',
+        isError && 'border-rose-500/30 grayscale opacity-70'
+      )}
+    >
     <div className={cn(
       'flex items-center h-11 border rounded-xl transition-all duration-300 hover:bg-white/[0.06] shrink-0',
       isPrimary ? 'bg-cyan-500/8 border-cyan-400/30' : 'bg-white/[0.03] border-white/10',
@@ -54,12 +61,13 @@ const TokenWidget = memo(({ ticker, isPrimary }: { ticker: MarketTicker; isPrima
   );
 });
 
-const LanguageSwitcher = () => {
+const LanguageSwitcher: React.FC = () => {
   const { i18n } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
+
   const languages = [
-    { code: 'en', label: 'EN', full: 'English' },
-    { code: 'tr', label: 'TR', full: 'Türkçe' }
+    { code: 'en', full: 'English' },
+    { code: 'tr', full: 'Türkçe' }
   ];
 
   return (
@@ -76,6 +84,13 @@ const LanguageSwitcher = () => {
       <AnimatePresence>
         {isOpen && (
           <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[100]"
+              onClick={() => setIsOpen(false)}
+            />
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100]" onClick={() => setIsOpen(false)} />
             <motion.div
               initial={{ opacity: 0, y: 8, scale: 0.95 }}
@@ -146,6 +161,18 @@ export const Header: React.FC<HeaderProps> = ({ isOnline, latency }) => {
       </div>
 
       <div className="flex-1 flex items-center gap-2 overflow-x-auto no-scrollbar">
+        <AnimatePresence mode="popLayout">
+          {MARKET_ORDER.map((symbol) =>
+            data[symbol] ? (
+              <motion.div key={symbol} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}>
+                <TokenWidget ticker={data[symbol]} isPrimary={symbol === 'AOXC'} />
+              </motion.div>
+            ) : null
+          )}
+        </div>
+      </div>
+
+      <div className="flex-1 flex items-center gap-2 overflow-x-auto no-scrollbar">
     <header className="min-h-16 md:h-20 shrink-0 flex items-center border-b border-white/5 bg-[#020202] relative z-50 select-none overflow-hidden">
       
       {/* 1. BRANDING & OS KERNEL STATUS */}
@@ -177,6 +204,10 @@ export const Header: React.FC<HeaderProps> = ({ isOnline, latency }) => {
       <div className="hidden lg:flex items-center gap-5 border-l border-white/10 pl-5">
         <div className="flex flex-col items-end">
           <span className="text-[9px] text-white/40 uppercase">Gas</span>
+          <span className="text-[11px] font-semibold text-white/90 flex items-center gap-1">
+            <Zap size={12} className="text-amber-400" />
+            {networkLoad || '0 gwei'}
+          </span>
           <span className="text-[11px] font-semibold text-white/90 flex items-center gap-1"><Zap size={12} className="text-amber-400" />{networkLoad || '0 gwei'}</span>
         </div>
         <div className="flex flex-col items-end">
@@ -239,31 +270,43 @@ export const Header: React.FC<HeaderProps> = ({ isOnline, latency }) => {
             </div>
           </div>
         </div>
-
-        {/* ACTIONS */}
-        <div className="flex items-center gap-3 lg:gap-4 border-l border-white/5 pl-4 lg:pl-8 h-full">
-          <LanguageSwitcher />
-
-          {walletAddress ? (
-            <div className="flex items-center gap-3 px-4 py-2 bg-cyan-500/5 border border-cyan-500/20 rounded-xl group hover:border-cyan-500/40 transition-all cursor-pointer">
-              <ShieldCheck size={14} className="text-cyan-500 animate-pulse" />
-              <span className="text-[10px] font-mono font-black text-white/80 group-hover:text-cyan-400 uppercase tracking-tighter transition-colors">
-                {shortAddress}
-              </span>
-            </div>
-          ) : (
-            <button
-              onClick={connectWallet}
-              disabled={isConnecting}
-              className="relative flex items-center gap-3 bg-white text-black px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.1em] transition-all hover:bg-cyan-500 hover:text-white active:scale-95 disabled:opacity-50"
-            >
-              <Wallet size={14} />
-              {isConnecting ? 'Handshaking...' : 'Init_Wallet'}
-            </button>
-          )}
+        <div className="flex flex-col items-end">
+          <span className="text-[9px] text-white/40 uppercase">Uplink</span>
+          <span className={cn('text-[11px] font-bold', isOnline ? 'text-emerald-400' : 'text-rose-400')}>
+            {isOnline ? `${latency}ms` : 'Offline'}
+          </span>
         </div>
       </div>
 
+      <div className="flex items-center gap-2 sm:gap-3">
+        <div className="hidden md:block">
+        {/* ACTIONS */}
+        <div className="flex items-center gap-3 lg:gap-4 border-l border-white/5 pl-4 lg:pl-8 h-full">
+          <LanguageSwitcher />
+        </div>
+
+        {walletAddress ? (
+          <div className="flex items-center gap-2 px-3 py-2 bg-cyan-500/10 border border-cyan-400/30 rounded-lg">
+            <ShieldCheck size={14} className="text-cyan-300" />
+            <span className="text-[10px] font-mono text-white/90">{shortAddress}</span>
+          </div>
+        ) : (
+          <button
+            onClick={connectWallet}
+            disabled={isConnecting}
+            className="flex items-center gap-2 bg-cyan-500 text-black px-3 sm:px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all hover:bg-cyan-400 disabled:opacity-50"
+          >
+            <Wallet size={13} />
+            {isConnecting ? 'Connecting' : 'Wallet'}
+          </button>
+        )}
+
+        <div className="lg:hidden flex items-center gap-1 rounded-lg border border-white/15 px-2 py-1.5 bg-black/25">
+          <Activity size={11} className={cn(isOnline ? 'text-emerald-400' : 'text-rose-400')} />
+          <span className={cn('text-[10px] font-bold', isOnline ? 'text-emerald-400' : 'text-rose-400')}>
+            {isOnline ? `${latency}ms` : 'Off'}
+          </span>
+        </div>
 
       <div className="flex sm:hidden items-center gap-2 px-3 ml-auto">
         <span className={cn("text-[10px] font-black uppercase", isOnline ? "text-emerald-400" : "text-rose-500")}>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { BadgeCheck, CircleDashed, FileCheck2, Rocket, Shield } from 'lucide-react';
 import { BadgeCheck, CircleDashed, FileCheck2, Shield, Rocket } from 'lucide-react';
 import { BadgeCheck, CircleDashed, FileCheck2 } from 'lucide-react';
 
@@ -10,6 +11,7 @@ const checklist = [
   'Multi-sig + timelock ve acil durdurma prosedürü test edildi',
   'X Layer / Sui / Cardano üzerinde gerçek mainnet smoke testleri geçti',
   'Monitoring + alerting (RPC latency, failover, incident runbook) aktif',
+  'Explorer transaction linkleri, legal ve support sayfaları canlı doğrulandı'
   'Explorer transaction linkleri, legal ve support sayfaları canlı doğrulandı',
   'Gerçek linkler, explorer tx linkleri ve legal sayfalar doğrulandı',
 ];
@@ -22,6 +24,9 @@ export const MainnetReadiness: React.FC = () => {
           <Rocket size={16} className="text-cyan-300" />
           <h2 className="text-base sm:text-lg font-black uppercase tracking-[0.15em] text-white">Mainnet Audit Readiness</h2>
         </div>
+        <p className="text-xs sm:text-sm text-white/70 mt-2">
+          Daha ferah, kutu tipli operasyon görünümü. Aşağıdaki maddeler tamamlandığında mainnet geçişi çok daha güvenli olur.
+        </p>
         <p className="text-xs sm:text-sm text-white/70 mt-2">Daha ferah, kutu tipli operasyon görünümü. Aşağıdaki maddeler tamamlandığında mainnet geçişi çok daha güvenli olur.</p>
     <section className="rounded-2xl border border-white/10 bg-black/30 p-4 sm:p-6 space-y-5">
       <header>
@@ -32,6 +37,12 @@ export const MainnetReadiness: React.FC = () => {
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
         {checklist.map((item, index) => (
           <div key={item} className="flex items-start gap-3 rounded-xl border border-white/10 bg-[#101a2d]/85 p-3.5">
+            {index < 4 ? (
+              <BadgeCheck size={15} className="text-emerald-400 mt-0.5" />
+            ) : (
+              <CircleDashed size={15} className="text-amber-400 mt-0.5" />
+            )}
+            <p className="text-xs text-white/85 leading-relaxed">{item}</p>
             {index < 4 ? <BadgeCheck size={15} className="text-emerald-400 mt-0.5" /> : <CircleDashed size={15} className="text-amber-400 mt-0.5" />}
             <p className="text-xs text-white/85 leading-relaxed">{item}</p>
           <div key={item} className="flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.02] p-3">
