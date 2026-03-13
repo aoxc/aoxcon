@@ -43,6 +43,11 @@ const TokenWidget = memo(({ ticker, isPrimary }: { ticker: MarketTicker; isPrima
         isError && 'border-rose-500/30 grayscale opacity-70'
       )}
     >
+    <div className={cn(
+      'flex items-center h-11 border rounded-xl transition-all duration-300 hover:bg-white/[0.06] shrink-0',
+      isPrimary ? 'bg-cyan-500/8 border-cyan-400/30' : 'bg-white/[0.03] border-white/10',
+      isError && 'border-rose-500/30 grayscale opacity-70'
+    )}>
       <div className="px-3 border-r border-white/10 flex flex-col justify-center">
         <span className="text-[9px] font-black text-white/30 uppercase leading-none">{ticker.symbol}</span>
       </div>
@@ -86,6 +91,7 @@ const LanguageSwitcher: React.FC = () => {
               className="fixed inset-0 z-[100]"
               onClick={() => setIsOpen(false)}
             />
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100]" onClick={() => setIsOpen(false)} />
             <motion.div
               initial={{ opacity: 0, y: 8, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -163,6 +169,35 @@ export const Header: React.FC<HeaderProps> = ({ isOnline, latency }) => {
               </motion.div>
             ) : null
           )}
+        </div>
+      </div>
+
+      <div className="flex-1 flex items-center gap-2 overflow-x-auto no-scrollbar">
+    <header className="min-h-16 md:h-20 shrink-0 flex items-center border-b border-white/5 bg-[#020202] relative z-50 select-none overflow-hidden">
+      
+      {/* 1. BRANDING & OS KERNEL STATUS */}
+      <div className="hidden sm:flex sm:w-56 lg:w-80 px-4 lg:px-8 flex-col border-r border-white/5 h-full justify-center bg-gradient-to-r from-cyan-500/[0.02] to-transparent">
+        <div className="flex items-center gap-3">
+          <Activity size={14} className="text-cyan-500 animate-pulse" />
+          <h1 className="font-black tracking-[0.6em] text-xs text-white uppercase">
+            AOXC<span className="text-cyan-500">OS</span>
+          </h1>
+        </div>
+        <div className="flex items-center gap-2 mt-1.5 opacity-40">
+          <span className="text-[7px] font-mono font-black tracking-[0.3em] uppercase italic text-white">
+            SYS_AUDIT_MODE: ENFORCED // KERNEL v3.2.1
+          </span>
+        </div>
+      </div>
+
+      {/* 2. REAL-TIME MARKET STRIP */}
+      <div className="flex-1 flex items-center gap-2 sm:gap-3 px-3 sm:px-6 overflow-x-auto no-scrollbar h-full bg-black/20">
+        <AnimatePresence mode="popLayout">
+          {MARKET_ORDER.map((symbol) => data[symbol] && (
+            <motion.div key={symbol} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}>
+              <TokenWidget ticker={data[symbol]} isPrimary={symbol === 'AOXC'} />
+            </motion.div>
+          ))}
         </AnimatePresence>
       </div>
 
@@ -173,6 +208,67 @@ export const Header: React.FC<HeaderProps> = ({ isOnline, latency }) => {
             <Zap size={12} className="text-amber-400" />
             {networkLoad || '0 gwei'}
           </span>
+          <span className="text-[11px] font-semibold text-white/90 flex items-center gap-1"><Zap size={12} className="text-amber-400" />{networkLoad || '0 gwei'}</span>
+        </div>
+        <div className="flex flex-col items-end">
+          <span className="text-[9px] text-white/40 uppercase">Uplink</span>
+          <span className={cn('text-[11px] font-bold', isOnline ? 'text-emerald-400' : 'text-rose-400')}>{isOnline ? `${latency}ms` : 'Offline'}</span>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2 sm:gap-3">
+        <div className="hidden md:block"><LanguageSwitcher /></div>
+        {walletAddress ? (
+          <div className="flex items-center gap-2 px-3 py-2 bg-cyan-500/10 border border-cyan-400/30 rounded-lg">
+            <ShieldCheck size={14} className="text-cyan-300" />
+            <span className="text-[10px] font-mono text-white/90">{shortAddress}</span>
+          </div>
+        ) : (
+          <button
+            onClick={connectWallet}
+            disabled={isConnecting}
+            className="flex items-center gap-2 bg-cyan-500 text-black px-3 sm:px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all hover:bg-cyan-400 disabled:opacity-50"
+          >
+            <Wallet size={13} />
+            {isConnecting ? 'Connecting' : 'Wallet'}
+          </button>
+        )}
+
+        <div className="lg:hidden flex items-center gap-1 rounded-lg border border-white/15 px-2 py-1.5 bg-black/25">
+          <Activity size={11} className={cn(isOnline ? 'text-emerald-400' : 'text-rose-400')} />
+          <span className={cn('text-[10px] font-bold', isOnline ? 'text-emerald-400' : 'text-rose-400')}>
+            {isOnline ? `${latency}ms` : 'Off'}
+          </span>
+        </div>
+      {/* 3. TELEMETRY & SYSTEM AUTH */}
+      <div className="hidden md:flex items-center gap-5 lg:gap-8 px-4 lg:px-8 ml-auto border-l border-white/5 h-full bg-gradient-to-l from-white/[0.03] to-transparent">
+        
+        <div className="flex gap-4 lg:gap-8">
+          <div className="flex flex-col items-end">
+            <span className="text-[7px] font-black text-white/20 uppercase tracking-[0.2em] mb-1">Gas_Priority</span>
+            <div className="flex items-center gap-2">
+              <Zap size={10} className="text-amber-500 animate-pulse" />
+              <span className="text-[11px] font-mono font-black text-white/90 tabular-nums">
+                {networkLoad || '0.020000001 gwei'}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-col items-end border-l border-white/5 pl-8">
+            <span className="text-[7px] font-black text-white/20 uppercase tracking-[0.2em] mb-1">Uplink_Status</span>
+            <div className="flex items-center gap-2">
+              <div className={cn(
+                "w-1.5 h-1.5 rounded-full transition-all duration-700", 
+                isOnline ? "bg-emerald-500 shadow-[0_0_10px_#10b981]" : "bg-rose-600 shadow-[0_0_10px_#e11d48]"
+              )} />
+              <span className={cn(
+                "text-[10px] font-black uppercase tracking-widest tabular-nums", 
+                isOnline ? "text-emerald-500" : "text-rose-600"
+              )}>
+                {isOnline ? `${latency}ms` : 'Offline'}
+              </span>
+            </div>
+          </div>
         </div>
         <div className="flex flex-col items-end">
           <span className="text-[9px] text-white/40 uppercase">Uplink</span>
@@ -184,6 +280,8 @@ export const Header: React.FC<HeaderProps> = ({ isOnline, latency }) => {
 
       <div className="flex items-center gap-2 sm:gap-3">
         <div className="hidden md:block">
+        {/* ACTIONS */}
+        <div className="flex items-center gap-3 lg:gap-4 border-l border-white/5 pl-4 lg:pl-8 h-full">
           <LanguageSwitcher />
         </div>
 
@@ -209,6 +307,16 @@ export const Header: React.FC<HeaderProps> = ({ isOnline, latency }) => {
             {isOnline ? `${latency}ms` : 'Off'}
           </span>
         </div>
+
+      <div className="flex sm:hidden items-center gap-2 px-3 ml-auto">
+        <span className={cn("text-[10px] font-black uppercase", isOnline ? "text-emerald-400" : "text-rose-500")}>
+          {isOnline ? `${latency}ms` : 'Offline'}
+        </span>
+      </div>
+
+      {/* FOOTER DECORATION */}
+      <div className="absolute bottom-0 left-0 w-full opacity-10 pointer-events-none">
+        <Pulse isOnline={isOnline} latency={latency} />
       </div>
     </header>
   );
