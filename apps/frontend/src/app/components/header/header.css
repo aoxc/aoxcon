@@ -1,0 +1,33 @@
+@reference "../../../styles.css";
+
+/**
+ * HEADER NEURAL ANIMATIONS
+ */
+.animate-in {
+  animation: neuralSlideDown 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+@keyframes neuralSlideDown {
+  from { opacity: 0; transform: translateY(-8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Glass-morphism polish for dropdowns */
+.shadow-2xl {
+  box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.8);
+}
+
+/* Neural pulse for brain icon */
+.fa-brain.animate-pulse {
+  animation: brainPulse 3s ease-in-out infinite;
+}
+
+@keyframes brainPulse {
+  0%, 100% { opacity: 1; filter: drop-shadow(0 0 5px var(--color-synapse)); }
+  50% { opacity: 0.6; filter: drop-shadow(0 0 12px var(--color-synapse)); }
+}
+
+/* Custom Input Focus State */
+input:focus {
+  box-shadow: 0 0 20px rgba(var(--color-sui-rgb), 0.05);
+}
