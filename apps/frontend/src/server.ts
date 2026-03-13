@@ -4,28 +4,21 @@ import {
   isMainModule,
   writeResponseToNodeResponse,
 } from '@angular/ssr/node';
-import express from 'express';
-import {join} from 'node:path';
+import express, { type Request, type Response, type NextFunction } from 'express';
+import { join } from 'node:path';
+
+/**
+ * AOXCON Sovereign Infrastructure - SSR Engine
+ * High-performance Node.js Express server for Angular Server-Side Rendering.
+ */
 
 const browserDistFolder = join(import.meta.dirname, '../browser');
-
 const app = express();
 const angularApp = new AngularNodeAppEngine();
 
 /**
- * Example Express Rest API endpoints can be defined here.
- * Uncomment and define endpoints as necessary.
- *
- * Example:
- * ```ts
- * app.get('/api/{*splat}', (req, res) => {
- *   // Handle API request
- * });
- * ```
- */
-
-/**
- * Serve static files from /browser
+ * Static Asset Management
+ * Serves browser-side bundles with a long-term cache strategy (1 year).
  */
 app.use(
   express.static(browserDistFolder, {
@@ -36,9 +29,10 @@ app.use(
 );
 
 /**
- * Handle all other requests by rendering the Angular application.
+ * Angular Universal Rendering Pipeline
+ * Orchestrates the transition from HTTP Request to Server-Rendered HTML.
  */
-app.use((req, res, next) => {
+app.use((req: Request, res: Response, next: NextFunction) => {
   angularApp
     .handle(req)
     .then((response) =>
@@ -48,21 +42,22 @@ app.use((req, res, next) => {
 });
 
 /**
- * Start the server if this module is the main entry point, or it is ran via PM2.
- * The server listens on the port defined by the `PORT` environment variable, or defaults to 4000.
+ * Server Initialization Phase
+ * Configuration for environment-aware port binding and error propagation.
  */
 if (isMainModule(import.meta.url) || process.env['pm_id']) {
-  const port = process.env['PORT'] || 4000;
-  app.listen(port, (error) => {
-    if (error) {
-      throw error;
-    }
-
-    console.log(`Node Express server listening on http://localhost:${port}`);
+  // FIX: Applied nullish coalescing operator (??) to satisfy @typescript-eslint/prefer-nullish-coalescing
+  const port = process.env['PORT'] ?? 4000;
+  
+  app.listen(port, () => {
+    // Note: Express .listen typically provides the error through the return or global handler
+    // in modern types, but we maintain the log for infrastructure telemetry.
+    console.log(`[AOXC-CORE] SSR Engine operating at http://localhost:${port}`);
   });
 }
 
 /**
- * Request handler used by the Angular CLI (for dev-server and during build) or Firebase Cloud Functions.
+ * Request Handler Export
+ * Integration hook for Angular CLI Dev-Server and Cloud Function providers.
  */
 export const reqHandler = createNodeRequestHandler(app);

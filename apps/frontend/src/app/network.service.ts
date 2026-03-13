@@ -5,6 +5,9 @@ import { mainnet } from 'viem/chains';
 import { SuiClient, getFullnodeUrl } from '@mysten/sui.js/client';
 import { AIService } from './ai.service';
 
+/**
+ * 🛰️ NETWORK ARCHITECTURE INTERFACES
+ */
 export type NetworkId = 'evm' | 'move' | 'plutus';
 export type NetworkStatus = 'connected' | 'error' | 'loading' | 'syncing';
 
@@ -19,15 +22,25 @@ export interface NetworkData {
   latency: number;
 }
 
+// Cardano API Response Interface to replace 'any'
+interface KoiosTipResponse {
+  block_no: number;
+  hash: string;
+  epoch_no: number;
+  abs_slot: number;
+  epoch_slot: number;
+  block_time: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class NetworkService implements OnDestroy {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
   private readonly aiService = inject(AIService); 
   
-  private readonly LOG_PREFIX = '🛡️ [AOXC-NEURAL-LINK]';
-  private heavyRefreshInterval: any;
-  private lightSimulationInterval: any;
+  // FIX: Replaced 'any' with Nodejs.Timeout or number for browser compatibility
+  private heavyRefreshInterval: ReturnType<typeof setInterval> | undefined;
+  private lightSimulationInterval: ReturnType<typeof setInterval> | undefined;
 
   // --- REAKTİF STATE ---
   public readonly xLayerData = signal<NetworkData>(this.getDefaultData('evm', 'X Layer'));
@@ -50,22 +63,15 @@ export class NetworkService implements OnDestroy {
     }
   }
 
-  private initSovereignSync() {
-    // 1. İlk gerçek veri çekimi
+  private initSovereignSync(): void {
     this.refreshAll();
-
-    // 2. AĞ KORUMA: Gerçek ağır veriler her 60 saniyede bir (1 Dakika)
+    // 60s Deep Scan
     this.heavyRefreshInterval = setInterval(() => this.refreshAll(), 60000);
-
-    // 3. UI CANLILIK: Dashboard rakamları her 3 saniyede bir hafifçe oynasın
+    // 3s Neural Jitter
     this.lightSimulationInterval = setInterval(() => this.simulateNeuralJitter(), 3000);
   }
 
-  /**
-   * Neural Jitter: Gerçek veri gelene kadar Dashboard'da 
-   * TPS rakamlarını gerçekçi şekilde dalgalandırır.
-   */
-  private simulateNeuralJitter() {
+  private simulateNeuralJitter(): void {
     const jitter = () => (Math.random() - 0.5) * 0.5;
     
     this.xLayerData.update(d => d.status === 'connected' ? ({ ...d, tps: Math.max(0, d.tps + jitter()) }) : d);
@@ -96,8 +102,8 @@ export class NetworkService implements OnDestroy {
         lastUpdated: Date.now()
       });
       return latency;
-    } catch (e) {
-      this.handleError('evm', e);
+    } catch (_error) {
+      this.handleError('evm', _error);
       return 0;
     }
   }
@@ -123,8 +129,8 @@ export class NetworkService implements OnDestroy {
         lastUpdated: Date.now()
       });
       return latency;
-    } catch (e) {
-      this.handleError('move', e);
+    } catch (_error) {
+      this.handleError('move', _error);
       return 0;
     }
   }
@@ -133,7 +139,8 @@ export class NetworkService implements OnDestroy {
     const start = performance.now();
     try {
       const res = await fetch('https://api.koios.rest/api/v1/tip');
-      const data = await res.json();
+      // FIX: Replaced any with KoiosTipResponse
+      const data = await res.json() as KoiosTipResponse[];
       
       const latency = Math.round(performance.now() - start);
       this.cardanoData.set({
@@ -147,8 +154,8 @@ export class NetworkService implements OnDestroy {
         lastUpdated: Date.now()
       });
       return latency;
-    } catch (e) {
-      this.handleError('plutus', e);
+    } catch (_error) {
+      this.handleError('plutus', _error);
       return 0;
     }
   }
@@ -167,13 +174,16 @@ export class NetworkService implements OnDestroy {
     ]).then((latencies) => {
       const avgLat = Math.round(latencies.reduce((a, b) => a + b, 0) / 3);
       this.aiService.addLog('Sync-Master', `Deep scan complete. Avg Neural Latency: ${avgLat}ms`, 'info');
+    }).catch((_err: unknown) => {
+      this.aiService.addLog('System-Core', 'Sovereign sync cycle interrupted.', 'critical');
     });
   }
 
-  private handleError(id: NetworkId, error: any) {
+  // FIX: Replaced 'any' with 'unknown' for safer error handling
+  private handleError(id: NetworkId, _error: unknown): void {
     const target = id === 'evm' ? this.xLayerData : id === 'move' ? this.suiData : this.cardanoData;
     target.update(prev => ({ ...prev, status: 'error', tps: 0 }));
-    this.aiService.addLog('System-Node', `Critical: ${id.toUpperCase()} RPC unreachable. Circuit breaker active.`, 'critical');
+    this.aiService.addLog('System-Node', `Critical: ${id.toUpperCase()} RPC unreachable.`, 'critical');
   }
 
   private getDefaultData(id: NetworkId, name: string): NetworkData {

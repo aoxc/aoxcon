@@ -6,22 +6,22 @@
        [style.transform]="'scale(' + (1 + networkService.globalTPS() / 1000) + ')'"
        aria-hidden="true"></div>
 
-  <app-header></app-header>
+  <app-header />
 
   <div class="flex-1 flex overflow-hidden relative z-10">
-    <app-sidebar-left (tabChange)="setTab($event)"></app-sidebar-left>
+    <app-sidebar-left (tabChange)="setTab($event)" />
 
     <main class="flex-1 overflow-y-auto custom-scrollbar bg-black/10 backdrop-blur-sm border-x border-white/5">
       @switch (activeTab()) {
-        @case ('overview') { <app-dashboard></app-dashboard> }
-        @case ('networks') { <app-dashboard></app-dashboard> }
+        @case ('overview') { <app-dashboard /> }
+        @case ('networks') { <app-dashboard /> }
         @case ('ai-builder') { <div class="p-20 text-center uppercase font-black">AI synthesis module active</div> }
         @case ('dao') { <div class="p-20 text-center uppercase font-black">Governance portal locked</div> }
       }
     </main>
 
-    <app-sidebar-right></app-sidebar-right>
+    <app-sidebar-right />
   </div>
 
-  <app-footer></app-footer>
+  <app-footer />
 </div>
