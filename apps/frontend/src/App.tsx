@@ -46,6 +46,7 @@ const API_CONFIG = {
   // Production link or Local Proxy
   ENDPOINT: import.meta.env.VITE_API_ENDPOINT || '/api/health',
   HEARTBEAT_INTERVAL_MS: 15000,
+  HEARTBEAT_INTERVAL_MS: 8000,
   REQUEST_TIMEOUT_MS: 5000,
 } as const;
 
