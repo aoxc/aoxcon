@@ -1,5 +1,6 @@
 import React from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
+import { Menu } from 'lucide-react'
 import { cn } from '../lib/utils'
 
 // Core Modules
@@ -68,6 +69,13 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
       {/* [HEADER VECTOR]: Fixed primary navigation and global status */}
       <header className="shrink-0 z-[60] relative bg-black/40 backdrop-blur-md border-b border-white/5">
         <Header isOnline={isOnline} latency={latency} />
+        <button
+          onClick={toggleMobileMenu}
+          className="md:hidden absolute left-3 top-1/2 -translate-y-1/2 z-[80] rounded-lg border border-white/20 bg-black/60 p-2 text-white/80"
+          aria-label="Toggle navigation menu"
+        >
+          <Menu size={16} />
+        </button>
       </header>
 
       {/* [APPLICATION ARCHITECTURE]: Flexbox allocation for modules */}

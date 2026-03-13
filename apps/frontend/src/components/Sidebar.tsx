@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { 
   LayoutDashboard, Brain, Wallet, BarChart3, 
   FileText, Network, Users, Code2, 
-  ShieldCheck, ChevronLeft, ChevronRight, Fingerprint
+  ShieldCheck, ChevronLeft, ChevronRight, Fingerprint, Rocket, Shield
 } from 'lucide-react';
 
 import { cn } from '../lib/utils';
@@ -18,7 +18,7 @@ import { useAoxcStore } from '../store/useAoxcStore';
 
 type NavigableView = 
   | 'dashboard' | 'aoxcan' | 'finance' | 'analytics' 
-  | 'pending' | 'registry' | 'governance' | 'skeleton';
+  | 'pending' | 'registry' | 'governance' | 'network' | 'readiness' | 'skeleton';
 
 interface SidebarItemProps {
   id: NavigableView;
@@ -56,6 +56,8 @@ export const Sidebar: React.FC = () => {
     { id: 'pending',    label: 'Pending Sig',     icon: FileText,        color: 'cyan',    group: 'ASSETS', count: pendingTransactions.length },
     
     { id: 'registry',   label: 'Registry Map',    icon: Network,         color: 'purple',  group: 'INFRA' },
+    { id: 'network',    label: 'Network Hub',     icon: Rocket,          color: 'cyan',    group: 'INFRA' },
+    { id: 'readiness',  label: 'Mainnet Ready',   icon: Shield,          color: 'emerald', group: 'INFRA' },
     { id: 'skeleton',   label: 'Source Scan',     icon: Code2,           color: 'purple',  group: 'INFRA' }
   ], [pendingTransactions.length]);
 
