@@ -1,62 +1,70 @@
 import React, { useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion'; // motion/react yerine standart framer-motion
 import { useAoxcStore } from '../store/useAoxcStore';
 import { AlertCircle, CheckCircle2, Info, XCircle, ShieldAlert } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 /**
  * @title AOXC Neural Toaster System
- * @notice Temporary notification hub for real-time protocol feedback.
- * @dev Integration: Listens to the global notification stream in useAoxcStore.
+ * @version 4.0.0-AUDIT
+ * @notice Neural OS Global Event Dispatcher.
+ * @dev Implements non-blocking overlay for protocol telemetry feedback.
  */
 
-export const Toaster = () => {
-  const { notifications, setNotifications } = useAoxcStore() as any;
+// Sistem genelindeki bildirim tiplerini tanımlıyoruz
+type TelemetryType = 'info' | 'warning' | 'error' | 'success' | 'ai';
 
-  // AUDIT: Auto-dismiss logic to prevent UI clutter
+export const Toaster: React.FC = () => {
+  const { notifications, setNotifications } = useAoxcStore();
+
+  /**
+   * @audit AUTO_PURGE_PROTOCOL
+   * Ensures the UI stack does not overflow during high-frequency network events.
+   */
   useEffect(() => {
     if (notifications.length > 0) {
       const timer = setTimeout(() => {
-        // En eski bildirimi listeden çıkar
-        setNotifications((prev: any) => prev.slice(1));
+        // En eski sinyali (FIFO - First In First Out) kuyruktan temizle
+        setNotifications((prev) => prev.slice(1));
       }, 5000);
       return () => clearTimeout(timer);
     }
   }, [notifications, setNotifications]);
 
-  const icons = {
+  const ICON_MAP: Record<TelemetryType, React.ReactNode> = {
     info: <Info size={16} className="text-cyan-500" />,
     warning: <AlertCircle size={16} className="text-amber-500" />,
     error: <XCircle size={16} className="text-rose-500" />,
     success: <CheckCircle2 size={16} className="text-emerald-500" />,
-    ai: <ShieldAlert size={16} className="text-purple-500" />
+    ai: <ShieldAlert size={16} className="text-purple-400" />
   };
 
   return (
-    <div className="fixed top-24 right-8 z-[9999] flex flex-col gap-4 pointer-events-none max-w-md w-full">
+    // fixed ve yüksek z-index ile her şeyin üzerinde, ancak pointer-events-none ile altındaki butonlara engel olmaz
+    <div className="fixed top-24 right-8 z-[9999] flex flex-col gap-3 pointer-events-none max-w-[380px] w-full font-mono">
       <AnimatePresence mode="popLayout">
-        {notifications.map((n: any) => (
+        {notifications.map((n) => (
           <motion.div
             key={n.id}
             layout
-            initial={{ x: 120, opacity: 0, scale: 0.9 }}
-            animate={{ x: 0, opacity: 1, scale: 1 }}
-            exit={{ x: 120, opacity: 0, scale: 0.8 }}
+            initial={{ x: 50, opacity: 0, filter: 'blur(10px)' }}
+            animate={{ x: 0, opacity: 1, filter: 'blur(0px)' }}
+            exit={{ x: 100, opacity: 0, scale: 0.9 }}
             className={cn(
-              "relative p-5 rounded-[1.5rem] border bg-[#080808]/95 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-start gap-5 pointer-events-auto group overflow-hidden",
-              n.type === 'info' ? "border-cyan-500/20 shadow-cyan-500/5" :
-              n.type === 'warning' ? "border-amber-500/20 shadow-amber-500/5" :
-              n.type === 'error' ? "border-rose-500/20 shadow-rose-500/5" :
-              "border-emerald-500/20 shadow-emerald-500/5"
+              "relative p-4 rounded-xl border bg-[#050505]/95 backdrop-blur-2xl shadow-[0_15px_40px_rgba(0,0,0,0.6)] flex items-start gap-4 pointer-events-auto group overflow-hidden",
+              n.type === 'info' ? "border-cyan-500/30" :
+              n.type === 'warning' ? "border-amber-500/30" :
+              n.type === 'error' ? "border-rose-500/30" :
+              "border-emerald-500/30"
             )}
           >
-            {/* AUDIT: Real-time life-cycle indicator */}
+            {/* PROGRESS_TELEMETRY: Time-to-live visualizer */}
             <motion.div 
               initial={{ width: "100%" }}
               animate={{ width: "0%" }}
               transition={{ duration: 5, ease: "linear" }}
               className={cn(
-                "absolute bottom-0 left-0 h-1 opacity-40",
+                "absolute bottom-0 left-0 h-[1px] opacity-60 shadow-[0_0_10px_currentcolor]",
                 n.type === 'info' ? "bg-cyan-500" :
                 n.type === 'warning' ? "bg-amber-500" :
                 n.type === 'error' ? "bg-rose-500" :
@@ -64,37 +72,34 @@ export const Toaster = () => {
               )}
             />
 
-            {/* Neural Pulse Background */}
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/[0.02] rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
-
-            {/* Icon Block */}
+            {/* SYMBOLIC_SIGNAL */}
             <div className={cn(
-              "p-3 rounded-2xl shrink-0 shadow-inner",
+              "p-2.5 rounded-lg shrink-0 border border-white/5",
               n.type === 'info' ? "bg-cyan-500/10" :
               n.type === 'warning' ? "bg-amber-500/10" :
               n.type === 'error' ? "bg-rose-500/10" :
               "bg-emerald-500/10"
             )}>
-              {icons[n.type as keyof typeof icons] || icons.info}
+              {ICON_MAP[n.type as TelemetryType] || ICON_MAP.info}
             </div>
             
-            {/* Content block */}
-            <div className="flex flex-col flex-1 min-w-0 pt-1">
-              <div className="flex items-center justify-between gap-4">
+            {/* CONTENT_TELEMETRY */}
+            <div className="flex flex-col flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-4 border-b border-white/[0.03] pb-1.5 mb-2">
                 <span className={cn(
-                  "text-[10px] font-black uppercase tracking-[0.2em] font-mono",
+                  "text-[9px] font-black uppercase tracking-[0.2em]",
                   n.type === 'info' ? "text-cyan-400" :
                   n.type === 'warning' ? "text-amber-400" :
                   n.type === 'error' ? "text-rose-400" :
                   "text-emerald-400"
                 )}>
-                  {n.type}_UPLINK
+                  {n.type}_SIGNAL
                 </span>
-                <span className="text-[8px] text-white/20 font-mono font-bold tracking-widest uppercase italic">
-                  Block_Live
+                <span className="text-[7px] text-white/20 font-bold uppercase tracking-tighter">
+                  Sec_Link_Active
                 </span>
               </div>
-              <p className="text-[11px] text-white/70 leading-relaxed mt-2 font-mono font-medium">
+              <p className="text-[10px] text-white/70 leading-relaxed font-medium">
                 {n.message}
               </p>
             </div>

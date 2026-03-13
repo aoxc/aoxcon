@@ -7,24 +7,21 @@ import { cn } from '../lib/utils';
 import { 
   Settings, Wallet, Wrench, ShieldAlert, ArrowRightLeft, 
   Database, Lock, RefreshCw, Zap, Cpu, Sparkles, 
-  ChevronRight, Info, Users 
+  ChevronRight, Info, Users, Vote, Scale
 } from 'lucide-react';
 
 /**
  * @title AOXCORE Modular Control Unit
  * @notice Central operational hub for manual and AI-interpreted protocol actions.
- * @dev Integration:
- * - Real-time vetting via GeminiSentinel.analyzeSystemState.
- * - RBAC (Role-Based Access Control) enforced at the UI level.
  */
 export const ModularControl = () => {
   const { 
     addLog, isProcessing, blockNumber, 
     permissionLevel, gasEfficiency, 
-    repairState, repairTarget, triggerRepair, setActiveView 
+    repairState, repairTarget, triggerRepair, setActiveView,
+    addPendingTx // GERÇEK İŞLEM İÇİN EKLENDİ
   } = useAoxcStore();
   
-  // Local state for UI feedback
   const [isVetting, setIsVetting] = useState(false);
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'core' | 'finance' | 'infra' | 'gov'>('core');
@@ -36,11 +33,10 @@ export const ModularControl = () => {
   const handleAction = async (actionName: string, module: 'Infra' | 'Finance' | 'Gov' | 'Core') => {
     if (isProcessing || isVetting) return;
 
-    // View State Transitions
     if (actionName === 'Registry Update') return setActiveView('registry');
     if (actionName === 'Governance Proposal') return setActiveView('governance');
     
-    // RBAC Security Gate: Audit-grade authorization check
+    // RBAC Security Gate
     if (permissionLevel < 1 && module !== 'Infra') {
       addLog(`[SECURITY_FAIL]: Unauthorized access attempt to ${module} module.`, 'error');
       return;
@@ -50,14 +46,24 @@ export const ModularControl = () => {
     addLog(`Sentinel: Vetting ${actionName} for X Layer block #${blockNumber}...`, 'ai');
     
     try {
-      const sentinel = new GeminiSentinel();
+      // PRO DÜZELTME: Sentinel parametresi eklendi
+      const sentinel = new GeminiSentinel({ backendUrl: import.meta.env.VITE_API_ENDPOINT });
       const result = await sentinel.analyzeSystemState(`Block: ${blockNumber}`, actionName);
       
-      if (result.action === 'APPROVE') {
+      // PRO DÜZELTME: Güvenli string karşılaştırması
+      if (String(result.action).toUpperCase() === 'APPROVE') {
         addLog(`SENTINEL_APPROVED: Logic integrity verified. Dispatching to Notary...`, 'success');
-        // Notary logic here
+        
+        // PRO DÜZELTME: Sadece log atma, işlemi gerçekten bekleyenler listesine ekle
+        addPendingTx({
+          operation: actionName,
+          module: module,
+          requiredSignatures: module === 'Core' ? 3 : 2,
+          currentSignatures: 1
+        });
+
       } else {
-        addLog(`SENTINEL_REJECTED: ${result.reason}`, 'error');
+        addLog(`SENTINEL_REJECTED: ${result.reason || 'Security threat detected.'}`, 'error');
       }
     } catch (error) {
       addLog(`SYSTEM_ERROR: Neural uplink failure.`, 'error');
@@ -67,7 +73,7 @@ export const ModularControl = () => {
   };
 
   /**
-   * @notice AI Command Interpreter: Maps natural language to Smart Contract actions.
+   * @notice AI Command Interpreter
    */
   const handleAICommand = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,13 +85,16 @@ export const ModularControl = () => {
     addLog(`Neural Interpreter: Decoding intent for "${rawCommand}"...`, 'ai');
     
     try {
-      const sentinel = new GeminiSentinel();
+      const sentinel = new GeminiSentinel({ backendUrl: import.meta.env.VITE_API_ENDPOINT });
       const result = await sentinel.analyzeSystemState(`User Command: ${rawCommand}`, "NATURAL_LANGUAGE_DISPATCH");
       
-      addLog(`Gemini Resolved: ${result.reason}`, 'ai');
+      addLog(`Gemini Resolved: ${result.reason || 'Command processed'}`, 'ai');
       
-      if (result.action === 'APPROVE') {
+      if (String(result.action).toUpperCase() === 'APPROVE') {
         addLog(`AUTONOMOUS_DISPATCH: Executing logic via X Layer Reth...`, 'success');
+        addPendingTx({ operation: `AI Exec: ${rawCommand.substring(0,20)}...`, module: 'Core', requiredSignatures: 1 });
+      } else {
+        addLog(`AI_COMMAND_DENIED: Action deemed unsafe.`, 'warning');
       }
     } catch (error) {
       addLog(`INTERPRETER_FAULT: Failed to resolve neural intent.`, 'error');
@@ -107,14 +116,15 @@ export const ModularControl = () => {
       <div className="p-5 border-b border-white/10 bg-gradient-to-b from-cyan-500/[0.03] to-transparent relative overflow-hidden">
         <form onSubmit={handleAICommand} className="relative z-10">
           <div className="absolute left-3 top-1/2 -translate-y-1/2 text-cyan-500/50">
-            <Sparkles size={14} className="animate-pulse" />
+            <Sparkles size={14} className={isVetting ? "animate-spin text-amber-500" : "animate-pulse"} />
           </div>
           <input 
             type="text"
             value={command}
             onChange={(e) => setCommand(e.target.value)}
-            placeholder={t('control.neural_command', "Enter neural command...")}
-            className="w-full bg-black/40 border border-cyan-500/20 rounded-2xl py-3 pl-10 pr-4 text-[11px] font-mono text-cyan-100 placeholder:text-cyan-900/40 focus:outline-none focus:border-cyan-500/60 transition-all shadow-inner"
+            disabled={isVetting}
+            placeholder={isVetting ? "Neural Engine Processing..." : t('control.neural_command', "Enter neural command...")}
+            className="w-full bg-black/40 border border-cyan-500/20 rounded-2xl py-3 pl-10 pr-4 text-[11px] font-mono text-cyan-100 placeholder:text-cyan-900/40 focus:outline-none focus:border-cyan-500/60 transition-all shadow-inner disabled:opacity-50"
           />
         </form>
         
@@ -133,7 +143,7 @@ export const ModularControl = () => {
             "text-[10px] leading-relaxed font-mono italic",
             gasEfficiency < 80 ? "text-red-200/60" : gasEfficiency < 90 ? "text-amber-200/60" : "text-emerald-200/60"
           )}>
-            {gasEfficiency < 80 ? 'CRITICAL_GAS_LOAD' : gasEfficiency < 90 ? 'HIGH_GAS_PRICE' : 'OPTIMAL_GAS_EFFICIENCY'}
+            {gasEfficiency < 80 ? 'CRITICAL_GAS_LOAD: Network congested.' : gasEfficiency < 90 ? 'HIGH_GAS_PRICE: Operations may be expensive.' : 'OPTIMAL_GAS_EFFICIENCY: Systems normal.'}
           </p>
         </div>
       </div>
@@ -145,8 +155,9 @@ export const ModularControl = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
+              disabled={isVetting}
               className={cn(
-                "flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                "flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50",
                 activeTab === tab.id 
                   ? "bg-cyan-500 text-black shadow-lg shadow-cyan-500/20" 
                   : "text-white/30 hover:text-white hover:bg-white/5"
@@ -174,13 +185,15 @@ export const ModularControl = () => {
                     title="Registry Sync" 
                     desc="Update system-wide contract pointers." 
                     icon={Database}
+                    disabled={isVetting}
                     onAction={() => handleAction('Registry Update', 'Core')}
                   />
                   <ControlCard 
                     title="Audit Protocol" 
                     desc="Trigger security scan on core nexus." 
                     icon={ShieldAlert}
-                    onAction={() => handleAction('Governance Proposal', 'Core')}
+                    disabled={isVetting}
+                    onAction={() => handleAction('Security Audit', 'Core')}
                   />
                 </>
               )}
@@ -188,14 +201,35 @@ export const ModularControl = () => {
               {activeTab === 'finance' && (
                 <>
                   <div className="grid grid-cols-2 gap-3 mb-4">
-                    <QuickAction icon={Zap} label="CPEX SWAP" color="emerald" onClick={() => handleAction('Cpex Swap', 'Finance')} />
-                    <QuickAction icon={RefreshCw} label="SYNC CHANGE" color="cyan" onClick={() => handleAction('Change Sync', 'Finance')} />
+                    <QuickAction icon={Zap} label="CPEX SWAP" color="emerald" disabled={isVetting} onClick={() => handleAction('Cpex Swap', 'Finance')} />
+                    <QuickAction icon={ArrowRightLeft} label="BRIDGE ASSETS" color="cyan" disabled={isVetting} onClick={() => handleAction('Bridge Transfer', 'Finance')} />
                   </div>
                   <ControlCard 
                     title="Vault Rebalance" 
                     desc="Optimize liquidity distribution." 
                     icon={Lock}
+                    disabled={isVetting}
                     onAction={() => handleAction('Vault Rebalance', 'Finance')}
+                  />
+                </>
+              )}
+
+              {/* PRO DÜZELTME: Eksik olan GOV sekmesi eklendi */}
+              {activeTab === 'gov' && (
+                <>
+                  <ControlCard 
+                    title="Draft Proposal" 
+                    desc="Initiate a new governance payload." 
+                    icon={Vote}
+                    disabled={isVetting}
+                    onAction={() => handleAction('Governance Proposal', 'Gov')}
+                  />
+                  <ControlCard 
+                    title="Execute Timelock" 
+                    desc="Push queued transactions to mainnet." 
+                    icon={Scale}
+                    disabled={isVetting}
+                    onAction={() => handleAction('Execute Timelock', 'Gov')}
                   />
                 </>
               )}
@@ -211,10 +245,11 @@ export const ModularControl = () => {
                     </div>
                     <button 
                       onClick={() => triggerRepair('Global')}
-                      className="w-full py-4 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-black text-white hover:bg-cyan-500 hover:text-black transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                      disabled={repairState !== 'stable' || isVetting}
+                      className="w-full py-4 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-black text-white hover:bg-cyan-500 hover:text-black transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <RefreshCw size={14} />
-                      INITIATE GLOBAL REPAIR
+                      <RefreshCw size={14} className={repairState !== 'stable' ? "animate-spin" : ""} />
+                      {repairState === 'stable' ? "INITIATE GLOBAL REPAIR" : "DIAGNOSING..."}
                     </button>
                   </div>
                 </div>
@@ -258,22 +293,36 @@ export const ModularControl = () => {
   );
 };
 
-// --- Atomic Helper Components ---
+// --- Atomic Helper Components (PRO DÜZELTME: Tipler Eklendi) ---
 
-const ControlCard = ({ title, desc, icon: Icon, onAction }: any) => (
+interface ControlCardProps {
+  title: string;
+  desc: string;
+  icon: React.ElementType;
+  onAction: () => void;
+  disabled?: boolean;
+}
+
+const ControlCard: React.FC<ControlCardProps> = ({ title, desc, icon: Icon, onAction, disabled }) => (
   <motion.div 
-    whileHover={{ x: 5 }}
-    onClick={onAction}
-    className="bg-white/[0.02] border border-white/5 p-4 rounded-2xl hover:bg-white/[0.05] hover:border-cyan-500/20 transition-all group cursor-pointer"
+    whileHover={disabled ? {} : { x: 5 }}
+    onClick={disabled ? undefined : onAction}
+    className={cn(
+      "bg-white/[0.02] border border-white/5 p-4 rounded-2xl transition-all group",
+      disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:bg-white/[0.05] hover:border-cyan-500/20"
+    )}
   >
     <div className="flex items-center gap-4">
-      <div className="p-3 bg-cyan-500/10 rounded-xl text-cyan-500 group-hover:bg-cyan-500 group-hover:text-black transition-all">
+      <div className={cn(
+        "p-3 rounded-xl transition-all",
+        disabled ? "bg-white/5 text-white/30" : "bg-cyan-500/10 text-cyan-500 group-hover:bg-cyan-500 group-hover:text-black"
+      )}>
         <Icon size={18} />
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between mb-1">
-          <h4 className="text-white font-black text-[10px] uppercase tracking-widest group-hover:text-cyan-400">{title}</h4>
-          <ChevronRight size={14} className="text-white/10 group-hover:text-cyan-500" />
+          <h4 className={cn("font-black text-[10px] uppercase tracking-widest transition-colors", disabled ? "text-white/40" : "text-white group-hover:text-cyan-400")}>{title}</h4>
+          <ChevronRight size={14} className={disabled ? "text-white/5" : "text-white/10 group-hover:text-cyan-500"} />
         </div>
         <p className="text-white/20 text-[9px] font-mono truncate">{desc}</p>
       </div>
@@ -281,13 +330,23 @@ const ControlCard = ({ title, desc, icon: Icon, onAction }: any) => (
   </motion.div>
 );
 
-const QuickAction = ({ icon: Icon, label, color, onClick }: any) => (
+interface QuickActionProps {
+  icon: React.ElementType;
+  label: string;
+  color: 'emerald' | 'cyan';
+  onClick: () => void;
+  disabled?: boolean;
+}
+
+const QuickAction: React.FC<QuickActionProps> = ({ icon: Icon, label, color, onClick, disabled }) => (
   <button 
     onClick={onClick}
+    disabled={disabled}
     className={cn(
-      "py-4 rounded-2xl border flex flex-col items-center gap-2 text-[9px] font-black tracking-widest transition-all",
-      color === 'emerald' ? "bg-emerald-500/5 border-emerald-500/10 text-emerald-500/60 hover:bg-emerald-500 hover:text-black" :
-      "bg-cyan-500/5 border-cyan-500/10 text-cyan-500/60 hover:bg-cyan-500 hover:text-black"
+      "py-4 rounded-2xl border flex flex-col items-center gap-2 text-[9px] font-black tracking-widest transition-all disabled:opacity-50 disabled:cursor-not-allowed",
+      color === 'emerald' 
+        ? "bg-emerald-500/5 border-emerald-500/10 text-emerald-500/60 hover:not:disabled:bg-emerald-500 hover:not:disabled:text-black" 
+        : "bg-cyan-500/5 border-cyan-500/10 text-cyan-500/60 hover:not:disabled:bg-cyan-500 hover:not:disabled:text-black"
     )}
   >
     <Icon size={16} />
