@@ -73,6 +73,11 @@ interface ImportMetaEnv {
    * @dev Network configuration
    */
   readonly VITE_XLAYER_RPC_URL: string;
+  readonly VITE_CHAIN_ID_MAINNET?: string;
+  readonly VITE_API_ENDPOINT?: string;
+  readonly VITE_SUI_RPC_ENDPOINT?: string;
+  readonly VITE_CARDANO_RPC_ENDPOINT?: string;
+  readonly VITE_ALLOW_DIRECT_RPC?: string;
 }
 
 interface ImportMeta {

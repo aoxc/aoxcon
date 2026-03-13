@@ -35,7 +35,7 @@ export class GeminiSentinel {
   constructor(options?: { provider?: AIProvider; backendUrl?: string }) {
     // Audit Path: Defaults to SHADOW for disconnected research environments.
     this.provider = options?.provider || "SHADOW"; 
-    this.backendUrl = options?.backendUrl || "http://localhost:5000/api/v1/sentinel/analyze";
+    this.backendUrl = options?.backendUrl || "/api/v1/sentinel/analyze";
   }
 
   /**

@@ -136,6 +136,37 @@ function generateId(seed: string) {
   return ethers.keccak256(ethers.toUtf8Bytes(seed + Date.now())).slice(2, 12)
 }
 
+
+const NETWORK_SYNC_MIN_INTERVAL_MS = 12000
+const RPC_FETCH_TIMEOUT_MS = 4500
+let lastNetworkSyncAt = 0
+let cspBlockedUntil = 0
+let cspWarningShown = false
+
+function isLikelyCspError(error: unknown): boolean {
+  const message = String(error ?? '').toLowerCase()
+  return (
+    message.includes('content security policy') ||
+    message.includes('csp') ||
+    message.includes('refused to connect')
+  )
+}
+
+async function safeJsonFetch(url: string, init?: RequestInit): Promise<any> {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), RPC_FETCH_TIMEOUT_MS)
+
+  try {
+    const response = await fetch(url, { ...init, signal: controller.signal })
+    if (!response.ok) {
+      throw new Error(`HTTP_${response.status}`)
+    }
+    return await response.json()
+  } finally {
+    clearTimeout(timeoutId)
+  }
+}
+
 export const useAoxcStore = create<AoxcState>()(
   subscribeWithSelector((set, get) => ({
     blockNumber: 0,
@@ -173,71 +204,96 @@ export const useAoxcStore = create<AoxcState>()(
     statusMatrix: { core: 'green', access: 'green', finance: 'green', infra: 'green', gov: 'green' },
 
     async syncNetwork() {
+      const now = Date.now()
+      if (now - lastNetworkSyncAt < NETWORK_SYNC_MIN_INTERVAL_MS) return
+      lastNetworkSyncAt = now
+
+      if (now < cspBlockedUntil) return
+
+      const allowDirectRpc = import.meta.env.VITE_ALLOW_DIRECT_RPC === 'true'
+      const suiEndpoint = import.meta.env.VITE_SUI_RPC_ENDPOINT || (allowDirectRpc ? 'https://fullnode.mainnet.sui.io:443' : '/api/chains/sui/checkpoint')
+      const cardanoEndpoint = import.meta.env.VITE_CARDANO_RPC_ENDPOINT || (allowDirectRpc ? 'https://api.koios.rest/api/v1/tip' : '/api/chains/cardano/tip')
+
       const fetchXLayer = async () => {
         try {
-          const t0 = Date.now();
-          const targetChainId = Number(import.meta.env.VITE_CHAIN_ID_MAINNET) || 196;
-          const provider = getProvider(targetChainId as any);
+          const t0 = Date.now()
+          const targetChainId = Number(import.meta.env.VITE_CHAIN_ID_MAINNET) || 196
+          const provider = getProvider(targetChainId as any)
           const [block, feeData] = await Promise.all([
             provider.getBlockNumber(),
             provider.getFeeData()
-          ]);
-          return { block, gas: feeData.gasPrice ?? 0n, ping: Date.now() - t0, status: 'online' as const };
+          ])
+          return { block, gas: feeData.gasPrice ?? 0n, ping: Date.now() - t0, status: 'online' as const }
         } catch {
-          return { block: 0, gas: 0n, ping: 0, status: 'offline' as const };
+          return { block: 0, gas: 0n, ping: 0, status: 'offline' as const }
         }
-      };
+      }
 
       const fetchSui = async () => {
         try {
-          const t0 = Date.now();
-          const res = await fetch('https://fullnode.mainnet.sui.io:443', {
+          const t0 = Date.now()
+          const data = await safeJsonFetch(suiEndpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "sui_getLatestCheckpointSequenceNumber", params: [] })
-          });
-          const data = await res.json();
-          return { checkpoint: Number(data.result), ping: Date.now() - t0, status: 'online' as const };
-        } catch {
-          return { checkpoint: 0, ping: 0, status: 'offline' as const };
+            body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'sui_getLatestCheckpointSequenceNumber', params: [] })
+          })
+          const checkpoint = Number(data?.result ?? data?.checkpoint ?? 0)
+          return { checkpoint, ping: Date.now() - t0, status: checkpoint > 0 ? 'online' as const : 'degraded' as const }
+        } catch (error) {
+          if (isLikelyCspError(error)) throw error
+          return { checkpoint: 0, ping: 0, status: 'offline' as const }
         }
-      };
+      }
 
       const fetchCardano = async () => {
         try {
-          const t0 = Date.now();
-          const res = await fetch('https://api.koios.rest/api/v1/tip');
-          const data = await res.json();
-          return { block: data[0].block_no, epoch: data[0].epoch_no, ping: Date.now() - t0, status: 'online' as const };
-        } catch {
-          return { block: 0, epoch: 0, ping: 0, status: 'offline' as const };
+          const t0 = Date.now()
+          const data = await safeJsonFetch(cardanoEndpoint)
+          const tip = Array.isArray(data) ? data[0] : data
+          const block = Number(tip?.block_no ?? tip?.block ?? 0)
+          const epoch = Number(tip?.epoch_no ?? tip?.epoch ?? 0)
+          return { block, epoch, ping: Date.now() - t0, status: block > 0 ? 'online' as const : 'degraded' as const }
+        } catch (error) {
+          if (isLikelyCspError(error)) throw error
+          return { block: 0, epoch: 0, ping: 0, status: 'offline' as const }
         }
-      };
+      }
 
-      const [xlayerRes, suiRes, cardanoRes] = await Promise.all([
-        fetchXLayer(), fetchSui(), fetchCardano()
-      ]);
+      try {
+        const [xlayerRes, suiRes, cardanoRes] = await Promise.all([
+          fetchXLayer(), fetchSui(), fetchCardano()
+        ])
 
-      const offlineCount = [xlayerRes.status, suiRes.status, cardanoRes.status].filter(s => s === 'offline').length;
-      let globalStatus: 'healthy' | 'warning' | 'critical' = 'healthy';
-      if (offlineCount === 1) globalStatus = 'warning';
-      if (offlineCount >= 2) globalStatus = 'critical';
+        const offlineCount = [xlayerRes.status, suiRes.status, cardanoRes.status].filter(s => s === 'offline').length
+        let globalStatus: 'healthy' | 'warning' | 'critical' = 'healthy'
+        if (offlineCount === 1) globalStatus = 'warning'
+        if (offlineCount >= 2) globalStatus = 'critical'
 
-      set(state => ({
-        blockNumber: xlayerRes.block > 0 ? xlayerRes.block : state.blockNumber,
-        networkStatus: globalStatus,
-        networkLoad: `${ethers.formatUnits(xlayerRes.gas, 'gwei')} gwei`,
-        chainStates: {
-          xlayer: { block: xlayerRes.block, status: xlayerRes.status, ping: xlayerRes.ping },
-          sui: { checkpoint: suiRes.checkpoint, status: suiRes.status, ping: suiRes.ping },
-          cardano: { block: cardanoRes.block, epoch: cardanoRes.epoch, status: cardanoRes.status, ping: cardanoRes.ping }
+        set(state => ({
+          blockNumber: xlayerRes.block > 0 ? xlayerRes.block : state.blockNumber,
+          networkStatus: globalStatus,
+          networkLoad: `${ethers.formatUnits(xlayerRes.gas, 'gwei')} gwei`,
+          chainStates: {
+            xlayer: { block: xlayerRes.block, status: xlayerRes.status, ping: xlayerRes.ping },
+            sui: { checkpoint: suiRes.checkpoint, status: suiRes.status, ping: suiRes.ping },
+            cardano: { block: cardanoRes.block, epoch: cardanoRes.epoch, status: cardanoRes.status, ping: cardanoRes.ping }
+          }
+        }))
+
+        if (globalStatus === 'critical' && get().networkStatus !== 'critical') {
+          get().addLog('MULTI-CHAIN ALERT: Core consensus degraded. Nodes unreachable.', 'error')
         }
-      }));
-
-      if (globalStatus === 'critical' && get().networkStatus !== 'critical') {
-        get().addLog("MULTI-CHAIN ALERT: Core consensus degraded. Nodes unreachable.", "error");
+      } catch (error) {
+        if (isLikelyCspError(error)) {
+          cspBlockedUntil = Date.now() + 5 * 60 * 1000
+          if (!cspWarningShown) {
+            cspWarningShown = true
+            get().addLog('CSP policy blocked direct RPC calls. Switching to cooldown mode to prevent UI freeze.', 'warning')
+          }
+        }
       }
     },
+
 
     addLog(message, type = 'info', chain) {
       const timestamp = Date.now()
