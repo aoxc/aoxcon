@@ -152,10 +152,10 @@ export const Header: React.FC<HeaderProps> = ({ isOnline, latency }) => {
   }, [walletAddress]);
 
   return (
-    <header className="h-20 shrink-0 flex items-center border-b border-white/5 bg-[#020202] relative z-50 select-none overflow-hidden">
+    <header className="min-h-16 md:h-20 shrink-0 flex items-center border-b border-white/5 bg-[#020202] relative z-50 select-none overflow-hidden">
       
       {/* 1. BRANDING & OS KERNEL STATUS */}
-      <div className="w-80 px-8 flex flex-col border-r border-white/5 h-full justify-center bg-gradient-to-r from-cyan-500/[0.02] to-transparent">
+      <div className="hidden sm:flex sm:w-56 lg:w-80 px-4 lg:px-8 flex-col border-r border-white/5 h-full justify-center bg-gradient-to-r from-cyan-500/[0.02] to-transparent">
         <div className="flex items-center gap-3">
           <Activity size={14} className="text-cyan-500 animate-pulse" />
           <h1 className="font-black tracking-[0.6em] text-xs text-white uppercase">
@@ -170,7 +170,7 @@ export const Header: React.FC<HeaderProps> = ({ isOnline, latency }) => {
       </div>
 
       {/* 2. REAL-TIME MARKET STRIP */}
-      <div className="flex-1 flex items-center gap-3 px-6 overflow-x-auto no-scrollbar h-full bg-black/20">
+      <div className="flex-1 flex items-center gap-2 sm:gap-3 px-3 sm:px-6 overflow-x-auto no-scrollbar h-full bg-black/20">
         <AnimatePresence mode="popLayout">
           {MARKET_ORDER.map((symbol) => (
             data[symbol] && (
@@ -187,9 +187,9 @@ export const Header: React.FC<HeaderProps> = ({ isOnline, latency }) => {
       </div>
 
       {/* 3. TELEMETRY & SYSTEM AUTH */}
-      <div className="flex items-center gap-8 px-8 ml-auto border-l border-white/5 h-full bg-gradient-to-l from-white/[0.03] to-transparent">
+      <div className="hidden md:flex items-center gap-5 lg:gap-8 px-4 lg:px-8 ml-auto border-l border-white/5 h-full bg-gradient-to-l from-white/[0.03] to-transparent">
         
-        <div className="flex gap-8">
+        <div className="flex gap-4 lg:gap-8">
           <div className="flex flex-col items-end">
             <span className="text-[7px] font-black text-white/20 uppercase tracking-[0.2em] mb-1">Gas_Priority</span>
             <div className="flex items-center gap-2">
@@ -218,7 +218,7 @@ export const Header: React.FC<HeaderProps> = ({ isOnline, latency }) => {
         </div>
 
         {/* ACTIONS */}
-        <div className="flex items-center gap-4 border-l border-white/5 pl-8 h-full">
+        <div className="flex items-center gap-3 lg:gap-4 border-l border-white/5 pl-4 lg:pl-8 h-full">
           <LanguageSwitcher />
 
           {walletAddress ? (
@@ -239,6 +239,13 @@ export const Header: React.FC<HeaderProps> = ({ isOnline, latency }) => {
             </button>
           )}
         </div>
+      </div>
+
+
+      <div className="flex sm:hidden items-center gap-2 px-3 ml-auto">
+        <span className={cn("text-[10px] font-black uppercase", isOnline ? "text-emerald-400" : "text-rose-500")}>
+          {isOnline ? `${latency}ms` : 'Offline'}
+        </span>
       </div>
 
       {/* FOOTER DECORATION */}
