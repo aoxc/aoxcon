@@ -29,6 +29,8 @@ import { UpgradePanel } from './components/UpgradePanel';
 import { WarRoom } from './components/WarRoom';
 import { Pulse } from './components/Pulse'; 
 import { NeuralTerminal } from './components/NeuralTerminal';
+import { NetworkHub } from './components/NetworkHub';
+import { MainnetReadiness } from './components/MainnetReadiness';
 
 // --- Hooks & Global State ---
 import { useAoxcClock } from './hooks/useAoxcClock';
@@ -126,6 +128,8 @@ export default function App(): React.JSX.Element {
       case 'analytics':  return <NeuralAnalytics />;
       case 'aoxcan':     return <AoxcanInterface />;
       case 'finance':    return <LedgerView />;
+      case 'network':    return <NetworkHub />;
+      case 'readiness':  return <MainnetReadiness />;
       default:           return <ModularControl />;
     }
   }, [activeView, bootComplete]);
