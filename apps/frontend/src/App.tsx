@@ -29,6 +29,8 @@ import { UpgradePanel } from './components/UpgradePanel';
 import { WarRoom } from './components/WarRoom';
 import { Pulse } from './components/Pulse'; 
 import { NeuralTerminal } from './components/NeuralTerminal';
+import { NetworkHub } from './components/NetworkHub';
+import { MainnetReadiness } from './components/MainnetReadiness';
 
 // --- Hooks & Global State ---
 import { useAoxcClock } from './hooks/useAoxcClock';
@@ -42,8 +44,8 @@ import { useAoxcStore } from './store/useAoxcStore';
 
 const API_CONFIG = {
   // Production link or Local Proxy
-  ENDPOINT: import.meta.env.VITE_API_ENDPOINT || 'http://localhost:5000/api/health',
-  HEARTBEAT_INTERVAL_MS: 8000,
+  ENDPOINT: import.meta.env.VITE_API_ENDPOINT || '/api/health',
+  HEARTBEAT_INTERVAL_MS: 15000,
   REQUEST_TIMEOUT_MS: 5000,
 } as const;
 
@@ -126,6 +128,8 @@ export default function App(): React.JSX.Element {
       case 'analytics':  return <NeuralAnalytics />;
       case 'aoxcan':     return <AoxcanInterface />;
       case 'finance':    return <LedgerView />;
+      case 'network':    return <NetworkHub />;
+      case 'readiness':  return <MainnetReadiness />;
       default:           return <ModularControl />;
     }
   }, [activeView, bootComplete]);
