@@ -1,0 +1,52 @@
+<footer class="h-10 bg-[#05070a]/90 border-t border-white/5 flex items-center justify-between px-6 backdrop-blur-2xl z-50 overflow-hidden">
+  
+  <div class="flex items-center gap-6">
+    <div class="flex items-center gap-2 group cursor-help">
+      <div class="relative flex h-2 w-2">
+        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--color-success)] opacity-75"></span>
+        <span class="relative inline-flex rounded-full h-2 w-2 bg-[var(--color-success)]"></span>
+      </div>
+      <span class="text-[9px] font-black uppercase tracking-[0.2em] text-white">Mainnet-Alpha Online</span>
+    </div>
+
+    <div class="h-4 w-[1px] bg-white/10"></div>
+
+    <div class="flex items-center gap-5 text-[9px] font-mono tracking-tighter">
+      <div class="flex items-center gap-2 group">
+        <span class="text-[var(--color-text-muted)] uppercase font-black text-[8px]">EVM</span>
+        <span class="text-[var(--color-xlayer)] font-bold">#{{ networkService.xLayerData().blockHeight || '------' }}</span>
+        <span class="text-[8px] text-[var(--color-text-muted)] opacity-50">({{ networkService.xLayerData().latency }}ms)</span>
+      </div>
+      
+      <div class="flex items-center gap-2 group">
+        <span class="text-[var(--color-text-muted)] uppercase font-black text-[8px]">MOVE</span>
+        <span class="text-[var(--color-sui)] font-bold">#{{ networkService.suiData().blockHeight || '------' }}</span>
+        <span class="text-[8px] text-[var(--color-text-muted)] opacity-50">({{ networkService.suiData().latency }}ms)</span>
+      </div>
+
+      <div class="flex items-center gap-2 group">
+        <span class="text-[var(--color-text-muted)] uppercase font-black text-[8px]">ADA</span>
+        <span class="text-[var(--color-cardano)] font-bold">#{{ networkService.cardanoData().blockHeight || '------' }}</span>
+        <span class="text-[8px] text-[var(--color-text-muted)] opacity-50">({{ networkService.cardanoData().latency }}ms)</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex items-center gap-6">
+    <div class="flex items-center gap-5">
+      <a href="#" class="footer-link">Documentation</a>
+      <a href="#" class="footer-link">Neural API</a>
+      <a href="#" class="footer-link font-bold text-[var(--color-sui)]">System Audit</a>
+    </div>
+
+    <div class="h-4 w-[1px] bg-white/10"></div>
+
+    <div class="flex items-center gap-3">
+      <div class="flex items-center gap-1 text-[9px] font-black text-[var(--color-text-muted)] uppercase tracking-widest">
+        <i class="fa-solid fa-microchip text-[7px]"></i>
+        <span>V2.1.0-STABLE</span>
+      </div>
+      <span class="text-[9px] text-[var(--color-text-muted)] opacity-40">© AOXC {{ currentYear }}</span>
+    </div>
+  </div>
+</footer>

@@ -1,0 +1,98 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg-1: #040812;
+  --color-bg-2: #0b1329;
+  --color-bg-3: #111a36;
+  --color-text-main: #ffffff;
+  --color-text-soft: #bac8dc;
+  --color-text-muted: #8295ab;
+  --color-sui: #4da2ff;
+  --color-xlayer: #8b5cf6;
+  --color-cardano: #2a7fff;
+  --color-synapse: #22d3ee;
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-border-soft: rgba(255, 255, 255, 0.08);
+  --color-border-hover: rgba(255, 255, 255, 0.2);
+}
+
+:root {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+body {
+  background: var(--color-bg-1);
+  color: var(--color-text-main);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+.bg-grid {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.orb {
+  position: fixed;
+  width: 50vw;
+  height: 50vw;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.15;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.orb-xlayer { background: var(--color-xlayer); top: -10%; left: -10%; }
+.orb-sui { background: var(--color-sui); bottom: -10%; right: -10%; }
+
+.glass-panel {
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--color-border-soft);
+  border-radius: 24px;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Chart Styles */
+svg text {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  fill: var(--color-text-muted);
+}
+
+.domain, .tick line {
+  stroke: rgba(255, 255, 255, 0.1);
+}
+
+/* Animations */
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 2s infinite;
+}

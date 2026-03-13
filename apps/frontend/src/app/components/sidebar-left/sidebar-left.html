@@ -1,0 +1,94 @@
+<aside class="sidebar-container lg:flex">
+  <div class="header-section">
+    <div class="glow-line"></div>
+    <div class="flex flex-col">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="pulse-dot"></span>
+        <span class="text-[9px] font-black uppercase tracking-[0.3em] text-[var(--color-text-muted)]">Neural Node</span>
+      </div>
+      <h1 class="text-3xl font-black italic tracking-tighter uppercase leading-none text-white">
+        AOXC<span class="text-[var(--color-sui)]">ON</span>
+      </h1>
+      <div class="version-tag">
+        <span class="text-[8px] font-black tracking-widest">SOVEREIGN CORE V2.1</span>
+      </div>
+    </div>
+  </div>
+
+  <nav class="nav-engine custom-scrollbar">
+    
+    <div class="nav-group">
+      <p class="group-title">{{ langService.t('overview') }}</p>
+      <button (click)="setTab('overview')" 
+              [class.active-node]="app.activeTab() === 'overview'" 
+              class="nav-node group">
+        <div class="node-icon"><i class="fa-solid fa-layer-group"></i></div>
+        <span class="node-label">{{ langService.t('overview') }}</span>
+      </button>
+    </div>
+
+    <div class="nav-group">
+      <p class="group-title">Sovereign Layers</p>
+      <button (click)="setNetwork('evm')" 
+              [class.active-node]="app.activeTab() === 'networks' && app.activeNetwork() === 'evm'" 
+              class="nav-node group">
+        <div class="node-icon text-[var(--color-xlayer)]"><i class="fa-solid fa-bolt-lightning"></i></div>
+        <span class="node-label">EVM Engine</span>
+      </button>
+
+      <button (click)="setNetwork('move')" 
+              [class.active-node]="app.activeTab() === 'networks' && app.activeNetwork() === 'move'" 
+              class="nav-node group">
+        <div class="node-icon text-[var(--color-sui)]"><i class="fa-solid fa-droplet"></i></div>
+        <span class="node-label">Move Module</span>
+      </button>
+
+      <button (click)="setNetwork('plutus')" 
+              [class.active-node]="app.activeTab() === 'networks' && app.activeNetwork() === 'plutus'" 
+              class="nav-node group">
+        <div class="node-icon text-[var(--color-cardano)]"><i class="fa-solid fa-microchip"></i></div>
+        <span class="node-label">Plutus Ledger</span>
+      </button>
+    </div>
+
+    <div class="nav-group">
+      <p class="group-title">Intelligence</p>
+      <button (click)="setTab('ai-builder')" [class.active-node]="app.activeTab() === 'ai-builder'" class="nav-node group">
+        <div class="node-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+        <span class="node-label">{{ langService.t('aiBuilder') }}</span>
+      </button>
+      <button (click)="setTab('dao')" [class.active-node]="app.activeTab() === 'dao'" class="nav-node group">
+        <div class="node-icon"><i class="fa-solid fa-building-shield"></i></div>
+        <span class="node-label">{{ langService.t('dao') }}</span>
+      </button>
+    </div>
+
+  </nav>
+
+  <div class="p-6 mt-auto">
+    <div class="sentinel-card">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2">
+          <div class="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e]"></div>
+          <span class="text-[9px] font-black uppercase tracking-widest text-white">Sentinel Integrity</span>
+        </div>
+        <span class="text-[9px] font-mono text-green-400">99.9%</span>
+      </div>
+
+      <div class="space-y-2">
+        <div class="flex justify-between text-[8px] font-bold uppercase opacity-50">
+          <span>Neural Load</span>
+          <span>{{ aiService.totalNeuralLoad() }}%</span>
+        </div>
+        <div class="h-1 bg-white/5 rounded-full overflow-hidden">
+          <div class="h-full bg-gradient-to-r from-[var(--color-sui)] to-blue-400 transition-all duration-1000" 
+               [style.width.%]="aiService.totalNeuralLoad()"></div>
+        </div>
+      </div>
+
+      <button class="audit-btn">
+        System Audit
+      </button>
+    </div>
+  </div>
+</aside>
