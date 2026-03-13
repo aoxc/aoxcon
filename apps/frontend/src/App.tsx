@@ -44,7 +44,7 @@ import { useAoxcStore } from './store/useAoxcStore';
 
 const API_CONFIG = {
   // Production link or Local Proxy
-  ENDPOINT: import.meta.env.VITE_API_ENDPOINT || 'http://localhost:5000/api/health',
+  ENDPOINT: import.meta.env.VITE_API_ENDPOINT || '/api/health',
   HEARTBEAT_INTERVAL_MS: 8000,
   REQUEST_TIMEOUT_MS: 5000,
 } as const;
