@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { 
   LayoutDashboard, Brain, Wallet, BarChart3, 
   FileText, Network, Users, Code2, 
-  ShieldCheck, ChevronLeft, ChevronRight, Fingerprint
+  ShieldCheck, ChevronLeft, ChevronRight, Fingerprint, Rocket, Shield
 } from 'lucide-react';
 
 import { cn } from '../lib/utils';
@@ -18,7 +18,7 @@ import { useAoxcStore } from '../store/useAoxcStore';
 
 type NavigableView = 
   | 'dashboard' | 'aoxcan' | 'finance' | 'analytics' 
-  | 'pending' | 'registry' | 'governance' | 'skeleton';
+  | 'pending' | 'registry' | 'governance' | 'network' | 'readiness' | 'skeleton';
 
 interface SidebarItemProps {
   id: NavigableView;
@@ -56,6 +56,8 @@ export const Sidebar: React.FC = () => {
     { id: 'pending',    label: 'Pending Sig',     icon: FileText,        color: 'cyan',    group: 'ASSETS', count: pendingTransactions.length },
     
     { id: 'registry',   label: 'Registry Map',    icon: Network,         color: 'purple',  group: 'INFRA' },
+    { id: 'network',    label: 'Network Hub',     icon: Rocket,          color: 'cyan',    group: 'INFRA' },
+    { id: 'readiness',  label: 'Mainnet Ready',   icon: Shield,          color: 'emerald', group: 'INFRA' },
     { id: 'skeleton',   label: 'Source Scan',     icon: Code2,           color: 'purple',  group: 'INFRA' }
   ], [pendingTransactions.length]);
 
@@ -67,12 +69,12 @@ export const Sidebar: React.FC = () => {
       animate={{ width: isCollapsed ? 80 : 280 }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className="h-full bg-[#020202] border-r border-white/5 flex flex-col relative z-50 shadow-[20px_0_80px_rgba(0,0,0,0.8)]"
+      className="h-full bg-transparent border-r border-white/10 flex flex-col relative z-50"
     >
       {/* PROFESSIONAL TOGGLE: Industrial Grade Blade Switch */}
       <button
         onClick={toggleSidebar}
-        className="absolute -right-[12px] top-12 w-6 h-12 bg-[#080808] border border-white/10 rounded-md flex items-center justify-center text-cyan-500 hover:text-white hover:border-cyan-500/50 transition-all z-[60] shadow-[5px_0_15px_rgba(0,0,0,0.5)] group"
+        className="absolute -right-[12px] top-12 w-6 h-12 bg-[#0b1220] border border-white/20 rounded-md flex items-center justify-center text-cyan-300 hover:text-white hover:border-cyan-400/60 transition-all z-[60] group"
       >
         <div className="absolute inset-0 bg-cyan-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
         {isSidebarCollapsed ? <ChevronRight size={14} strokeWidth={3} /> : <ChevronLeft size={14} strokeWidth={3} />}
@@ -95,7 +97,7 @@ export const Sidebar: React.FC = () => {
       </div>
 
       {/* SCROLLABLE_NAV: Segmented by Operation Sector */}
-      <div className="flex-1 overflow-y-auto scrollbar-hide px-3 py-4 space-y-8">
+      <div className="flex-1 overflow-y-auto scrollbar-hide px-3 py-4 space-y-6">
         {(['CORE', 'ASSETS', 'INFRA'] as const).map(sector => (
           <div key={sector} className="space-y-1">
             {!isCollapsed && (
@@ -119,7 +121,7 @@ export const Sidebar: React.FC = () => {
       </div>
 
       {/* RBAC_FOOTER: Permission Matrix */}
-      <div className="p-4 bg-black/40 border-t border-white/5">
+      <div className="p-4 bg-[#0b1220]/60 border-t border-white/10">
         <div className={cn(
           "bg-white/[0.02] border border-white/5 rounded-xl transition-all",
           isCollapsed ? "p-1.5" : "p-3 space-y-3"
@@ -173,7 +175,7 @@ const NavItem = memo(({ id, label, icon: Icon, color, isActive, isCollapsed, onC
       onClick={onClick}
       className={cn(
         "w-full flex items-center py-3.5 px-4 rounded-xl transition-all relative group",
-        isActive ? cn(bgClasses[color as keyof typeof bgClasses], "shadow-[inset_0_0_20px_rgba(0,0,0,0.2)]") : "hover:bg-white/[0.03]",
+        isActive ? cn(bgClasses[color as keyof typeof bgClasses], "shadow-[inset_0_0_0_1px_rgba(255,255,255,0.15)]") : "hover:bg-white/[0.06]",
         isCollapsed ? "justify-center" : "justify-start"
       )}
     >

@@ -1,5 +1,6 @@
 import React from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
+import { Menu } from 'lucide-react'
 import { cn } from '../lib/utils'
 
 // Core Modules
@@ -48,13 +49,13 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
 
   return (
     // [ROOT CONTAINER]: Absolute viewport lockdown. Prevents unauthorized scroll leaks.
-    <div className="h-screen w-full bg-[#020202] text-white flex flex-col font-mono overflow-hidden relative selection:bg-cyan-500/30">
+    <div className="h-screen w-full bg-[#0b1220] text-white flex flex-col font-mono overflow-hidden relative selection:bg-cyan-500/30">
       
       {/* [TELEMETRY BACKGROUND]: Ambient grid and cryptographic visual indicators */}
       <div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center overflow-hidden">
         {/* Deep space radial nodes */}
-        <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-cyan-900/10 blur-[120px] rounded-full" />
-        <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-emerald-900/10 blur-[120px] rounded-full" />
+        <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-cyan-500/10 blur-[120px] rounded-full" />
+        <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-indigo-500/10 blur-[120px] rounded-full" />
         
         {/* Geometric Audit Grid */}
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_60%_at_50%_50%,#000_10%,transparent_100%)] opacity-30" />
@@ -68,13 +69,20 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
       {/* [HEADER VECTOR]: Fixed primary navigation and global status */}
       <header className="shrink-0 z-[60] relative bg-black/40 backdrop-blur-md border-b border-white/5">
         <Header isOnline={isOnline} latency={latency} />
+        <button
+          onClick={toggleMobileMenu}
+          className="md:hidden absolute left-3 top-1/2 -translate-y-1/2 z-[80] rounded-lg border border-white/20 bg-black/60 p-2 text-white/80"
+          aria-label="Toggle navigation menu"
+        >
+          <Menu size={16} />
+        </button>
       </header>
 
       {/* [APPLICATION ARCHITECTURE]: Flexbox allocation for modules */}
       <div className="flex flex-1 min-h-0 relative z-10">
 
         {/* [TACTICAL SIDEBAR - DESKTOP]: Rigid width, glassmorphism barrier */}
-        <aside className="hidden md:flex flex-col w-64 shrink-0 z-[40] bg-black/60 backdrop-blur-xl border-r border-white/5 relative">
+        <aside className="hidden md:flex flex-col w-72 shrink-0 z-[40] bg-[#111a2b]/90 backdrop-blur-xl border-r border-white/10 relative">
           <Sidebar />
           {/* Edge illumination for modular separation */}
           <div className="absolute right-0 top-0 w-[1px] h-full bg-gradient-to-b from-transparent via-cyan-500/20 to-transparent" />
@@ -90,7 +98,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
                 animate={{ x: 0 }}
                 exit={{ x: -300 }}
                 transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                className="fixed left-0 z-[70] md:hidden w-72 bg-black/90 backdrop-blur-2xl border-r border-cyan-500/20 shadow-[20px_0_50px_rgba(0,0,0,0.8)]"
+                className="fixed left-0 z-[70] md:hidden w-72 bg-[#111a2b]/95 backdrop-blur-2xl border-r border-cyan-400/30 shadow-[20px_0_50px_rgba(0,0,0,0.6)]"
                 style={{ top: HEADER_HEIGHT, height: `calc(100vh - ${HEADER_HEIGHT}px)` }}
               >
                 <Sidebar />
@@ -112,15 +120,15 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
         <div className="flex flex-1 min-w-0 min-h-0 relative">
 
           {/* [PRIMARY AUDIT SURFACE]: The main functional column */}
-          <main className="flex flex-1 min-w-0 min-h-0 flex-col relative z-20 shadow-[-20px_0_50px_rgba(0,0,0,0.2)]">
+          <main className="flex flex-1 min-w-0 min-h-0 flex-col relative z-20">
             
             {/* Real-time Status Matrix */}
-            <div className="shrink-0 bg-gradient-to-b from-black/60 to-transparent backdrop-blur-sm p-4 z-30 border-b border-white/5">
+            <div className="shrink-0 bg-[#0f172a]/70 backdrop-blur-sm p-3 sm:p-4 z-30 border-b border-white/10">
               <StatusMatrix isOnline={isOnline} latency={latency} />
             </div>
 
             {/* Scrollable Content Engine (WarRoom, Registry, etc.) */}
-            <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide relative z-20 px-2 sm:px-4 py-4">
+            <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide relative z-20 px-2 sm:px-4 py-3 sm:py-4">
               {children}
             </div>
 
