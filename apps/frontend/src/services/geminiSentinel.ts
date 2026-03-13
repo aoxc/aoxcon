@@ -1,19 +1,27 @@
 import { z } from "zod";
-// Mock motorunu dahil ediyoruz
+// Professional Audit Note: Ensure neuralEngine provides consistent high-integrity mock data.
 import { MOCK_SENTINEL_TALK, simulateNeuralProcessing } from "../mocks/neuralEngine";
 
-export type SentinelVerdict = "ALLOW" | "WARN" | "REJECT"
+/**
+ * SOVEREIGN INFRASTRUCTURE AUDIT:
+ * SentinelVerdict defines the deterministic state transitions for system security.
+ */
+export type SentinelVerdict = "ALLOW" | "WARN" | "REJECT";
 
 export interface SentinelResponse {
-  risk: number
-  reason: string
-  action: SentinelVerdict
+  risk: number;
+  reason: string;
+  action: SentinelVerdict;
 }
 
-export type AIProvider = "LOCAL" | "GEMINI" | "OPENAI" | "CLAUDE" | "SHADOW"; // SHADOW eklendi
+export type AIProvider = "LOCAL" | "GEMINI" | "OPENAI" | "CLAUDE" | "SHADOW";
 
-const DEFAULT_TIMEOUT = 5000; // Mock deneyimi için biraz daha kısa tuttuk
+const DEFAULT_TIMEOUT = 5000;
 
+/**
+ * INTEGRITY SCHEMA:
+ * Strict validation using Zod to ensure runtime type-safety across heterogeneous providers.
+ */
 const SentinelSchema = z.object({
   risk: z.number().min(0).max(100),
   reason: z.string(),
@@ -25,18 +33,18 @@ export class GeminiSentinel {
   private provider: AIProvider;
 
   constructor(options?: { provider?: AIProvider; backendUrl?: string }) {
-    // Çevrimdışı testler için varsayılanı SHADOW (Mock) yapabilirsin veya LOCAL bırakabilirsin
+    // Audit Path: Defaults to SHADOW for disconnected research environments.
     this.provider = options?.provider || "SHADOW"; 
     this.backendUrl = options?.backendUrl || "http://localhost:5000/api/v1/sentinel/analyze";
   }
 
   /**
-   * Mock Engine: Gerçek bir AI gibi davranan sahte motor
+   * [INTERNAL AUDIT]: Mock Engine (SHADOW Mode)
+   * Simulates neural processing for structural integrity testing.
    */
   private async callShadowAI(): Promise<SentinelResponse> {
-    const { riskScore, verdict } = await simulateNeuralProcessing(1500); // 1.5sn yapay gecikme
+    const { riskScore, verdict } = await simulateNeuralProcessing(1500); 
     
-    // Verdict'leri senin enum yapına (ALLOW, WARN, REJECT) çeviriyoruz
     const actionMap: Record<string, SentinelVerdict> = {
       "VERIFIED": "ALLOW",
       "WARNING": "WARN",
@@ -45,11 +53,43 @@ export class GeminiSentinel {
 
     return {
       risk: riskScore,
-      reason: `[SHADOW_NEURAL]: ${MOCK_SENTINEL_TALK[Math.floor(Math.random() * MOCK_SENTINEL_TALK.length)]}`,
+      reason: `[SHADOW_NEURAL_AUDIT]: ${MOCK_SENTINEL_TALK[Math.floor(Math.random() * MOCK_SENTINEL_TALK.length)]}`,
       action: actionMap[verdict] || "ALLOW"
     };
   }
 
+  /**
+   * [NETWORK AUDIT]: Local AI Provider Implementation
+   */
+  private async callLocalAI(operation: string, context: string): Promise<any> {
+    return this.safeFetch(`${this.backendUrl}/local`, { operation, context });
+  }
+
+  /**
+   * [NETWORK AUDIT]: Google Gemini Infrastructure implementation
+   */
+  private async callGemini(operation: string, context: string): Promise<any> {
+    return this.safeFetch(`${this.backendUrl}/gemini`, { operation, context });
+  }
+
+  /**
+   * [NETWORK AUDIT]: OpenAI GPT-4o Infrastructure implementation
+   */
+  private async callOpenAI(operation: string, context: string): Promise<any> {
+    return this.safeFetch(`${this.backendUrl}/openai`, { operation, context });
+  }
+
+  /**
+   * [NETWORK AUDIT]: Anthropic Claude Infrastructure implementation
+   */
+  private async callClaude(operation: string, context: string): Promise<any> {
+    return this.safeFetch(`${this.backendUrl}/claude`, { operation, context });
+  }
+
+  /**
+   * [RESILIENCE AUDIT]: safeFetch
+   * High-integrity fetch wrapper with deterministic timeout and signal abortion.
+   */
   private async safeFetch(url: string, payload: any): Promise<any> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT);
@@ -61,20 +101,22 @@ export class GeminiSentinel {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
-      if (!response.ok) throw new Error(`HTTP_${response.status}`);
+      if (!response.ok) throw new Error(`NETWORK_ERROR_STATUS_${response.status}`);
       return await response.json();
     } finally {
       clearTimeout(timer);
     }
   }
 
-  // ... callLocalAI, callGemini vb. metodlar aynı kalıyor ...
-
+  /**
+   * CORE COORDINATION LAYER: analyzeSystemState
+   * Orchestrates multi-chain state analysis across designated AI providers.
+   */
   async analyzeSystemState(contextLogs: any, operation: string): Promise<SentinelResponse> {
     try {
       let rawResponse: any;
 
-      // Eğer provider SHADOW ise veya internet yoksa doğrudan mock çalıştır
+      // SHADOW Priority: Research bypass or offline synchronization.
       if (this.provider === "SHADOW") {
         return await this.callShadowAI();
       }
@@ -86,17 +128,28 @@ export class GeminiSentinel {
         case "GEMINI":
           rawResponse = await this.callGemini(operation, JSON.stringify(contextLogs));
           break;
-        // ... diğer case'ler ...
-        default: rawResponse = await this.callShadowAI();
+        case "OPENAI":
+          rawResponse = await this.callOpenAI(operation, JSON.stringify(contextLogs));
+          break;
+        case "CLAUDE":
+          rawResponse = await this.callClaude(operation, JSON.stringify(contextLogs));
+          break;
+        default: 
+          rawResponse = await this.callShadowAI();
       }
 
+      // INTEGRITY CHECK: Validating raw AI output against Sovereign Schema.
       const parsed = SentinelSchema.safeParse(rawResponse);
-      if (!parsed.success) throw new Error("INVALID_PARSE");
+      if (!parsed.success) throw new Error("STRUCTURAL_INTEGRITY_FAILURE");
       return parsed.data;
 
     } catch (error) {
-      // HATA ANINDA KURTARICI: Sistem çökmez, Mock motoruna düşer
-      console.warn("[Sentinel] Connection lost. Falling back to Shadow AI...");
+      /**
+       * RESILIENCE PROTOCOL:
+       * In case of any provider failure, the system falls back to Shadow AI 
+       * to maintain network availability and systemic continuity.
+       */
+      console.warn("[SENTINEL_AUDIT] Resilience protocol active: Falling back to Shadow AI.");
       return await this.callShadowAI();
     }
   }
@@ -106,7 +159,7 @@ export class GeminiSentinel {
   }
 }
 
-// Global Singleton
+// Global Singleton Implementation for AOXC Infrastructure
 const defaultSentinel = new GeminiSentinel();
 
 export const getGeminiResponse = async (prompt: string, context: any = "") => {
