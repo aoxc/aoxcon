@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAoxcStore } from '../store/useAoxcStore';
-import { getGeminiResponse } from '../services/geminiSentinel';
-import { Send, Brain, Loader2 } from 'lucide-react';
+import { GeminiSentinel } from '../services/geminiSentinel'; 
+import { Send, Brain, Loader2, ShieldAlert, Cpu, Network } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 export const AoxcanInterface = () => {
@@ -10,25 +10,27 @@ export const AoxcanInterface = () => {
   const [isThinking, setIsThinking] = useState(false);
   const [aiState, setAiState] = useState<'idle' | 'processing' | 'analyzing'>('idle');
   
-  // Mesajlar arttığında otomatik en aşağı kaydırmak için Ref
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { addChatMessage, chatMessages, networkStatus, blockNumber, networkLoad, statusMatrix, analyticsData } = useAoxcStore();
 
-  const { addChatMessage, chatMessages } = useAoxcStore();
-
-  const scrollToBottom = () => {
+  // Scroll işlemini memoize ederek performans kazandık
+  const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  }, []);
 
   useEffect(() => {
     scrollToBottom();
-  }, [chatMessages, isThinking]);
+  }, [chatMessages, isThinking, scrollToBottom]);
 
+  // Sesli yanıt motoru - Geliştirilmiş
   const speak = (text: string) => {
     if (!window.speechSynthesis) return;
-    window.speechSynthesis.cancel(); // Önceki konuşmayı kes
+    window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 1.1;
-    utterance.pitch = 0.9;
+    // Yapay zeka sesi hissi için değerler
+    utterance.rate = 1.05;
+    utterance.pitch = 0.85; 
+    utterance.volume = 0.8;
     window.speechSynthesis.speak(utterance);
   };
 
@@ -39,27 +41,50 @@ export const AoxcanInterface = () => {
     const userMessage = input.trim();
     setInput('');
     
+    // Kullanıcı mesajını store'a ekle
     addChatMessage(userMessage, 'user');
     setIsThinking(true);
     setAiState('processing');
 
     try {
-      const state = useAoxcStore.getState();
+      // DÜZELTME 1: String yerine konfigürasyon objesi gönderiyoruz
+      const sentinel = new GeminiSentinel({ 
+        backendUrl: import.meta.env.VITE_API_ENDPOINT 
+      });
+
+      // Multichain Context: Buraya Sui ve Cardano verileri de eklenmeli
       const systemContext = {
-        blockNumber: state.blockNumber,
-        networkLoad: state.networkLoad,
-        networkStatus: state.networkStatus,
-        statusMatrix: state.statusMatrix
+        blockNumber,
+        networkLoad,
+        networkStatus,
+        statusMatrix,
+        // Son analytics verisini göndererek AI'nın güncel trendi görmesini sağla
+        latestMetrics: analyticsData?.[analyticsData.length - 1] || null,
+        activeProtocols: ['X-LAYER', 'SUI', 'CARDANO']
       };
 
       setAiState('analyzing');
-      const aiResponse = await getGeminiResponse(userMessage, systemContext);
       
-      addChatMessage(aiResponse, 'ai');
-      speak(aiResponse);
+      // AI Yanıtını al
+      const aiResponse = await sentinel.analyzeSystemState(
+        JSON.stringify(systemContext), // Bağlamı string olarak gönder
+        userMessage
+      );
+
+      // DÜZELTME 2: Güvenli tip dönüşümü (Type Casting) ile TS hatasını önlüyoruz
+      const parsedResponse = aiResponse as { text?: string; message?: string; analysis?: string };
+      const responseText = typeof aiResponse === 'string' 
+        ? aiResponse 
+        : parsedResponse.text || parsedResponse.message || parsedResponse.analysis || "Neural analysis complete.";
+      
+      addChatMessage(responseText, 'ai');
+      speak(responseText);
       
     } catch (error) {
-      addChatMessage("Uplink unstable. Re-routing neural processor...", "ai");
+      console.error("[SENTINEL_ERROR]", error);
+      const errorMsg = "Uplink unstable. Neural processor is re-routing through secure nodes...";
+      addChatMessage(errorMsg, "ai");
+      speak(errorMsg);
     } finally {
       setIsThinking(false);
       setAiState('idle');
@@ -67,73 +92,115 @@ export const AoxcanInterface = () => {
   };
 
   return (
-    /* h-full yerine min-h-0 ve flex-1 kullanımı layout'u korur */
-    <div className="flex flex-col h-full min-h-0 bg-black/40 backdrop-blur-xl border border-white/5 rounded-[2rem] overflow-hidden shadow-2xl">
+    <div className="flex flex-col h-full min-h-0 bg-[#080808]/60 backdrop-blur-2xl border border-white/5 rounded-[2.5rem] overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)]">
       
-      {/* Header - Fixed Height */}
-      <div className="shrink-0 p-5 border-b border-white/5 bg-gradient-to-r from-cyan-500/5 to-transparent flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-cyan-500/10 rounded-2xl flex items-center justify-center border border-cyan-500/20 shadow-[0_0_15px_rgba(6,182,212,0.1)]">
-            <Brain className={cn("text-cyan-500 transition-all", isThinking && "animate-pulse scale-110")} size={22} />
+      {/* Header */}
+      <div className="shrink-0 p-6 border-b border-white/5 bg-gradient-to-r from-cyan-500/[0.03] via-transparent to-amber-500/[0.03] flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="relative">
+            <div className={cn(
+              "absolute inset-0 bg-cyan-500/20 rounded-2xl blur-lg transition-opacity",
+              isThinking ? "opacity-100 animate-pulse" : "opacity-0"
+            )} />
+            <div className="w-12 h-12 bg-black border border-white/10 rounded-2xl flex items-center justify-center relative z-10">
+              <Brain className={cn("text-cyan-500 transition-all duration-700", isThinking && "rotate-[360deg] scale-110")} size={24} />
+            </div>
           </div>
           <div>
-            <h3 className="text-[10px] font-black text-white uppercase tracking-[0.3em]">Neural_Link_v2.5</h3>
-            <span className="text-[9px] font-mono text-cyan-500/50 uppercase tracking-widest italic">
-              Status: {aiState === 'idle' ? 'Operational' : 'Thinking...'}
-            </span>
+            <div className="flex items-center gap-2">
+              <h3 className="text-[11px] font-black text-white uppercase tracking-[0.4em]">Sentinel_AI_v3</h3>
+              <div className="flex gap-1">
+                <div className="w-1 h-1 rounded-full bg-cyan-500 animate-ping" />
+              </div>
+            </div>
+            <div className="flex items-center gap-3 mt-1">
+              <span className="text-[8px] font-mono text-cyan-500/50 uppercase tracking-widest flex items-center gap-1">
+                <Network size={8} /> X-LYR / SUI / ADA
+              </span>
+              <span className="text-[8px] font-mono text-white/20">|</span>
+              <span className="text-[8px] font-mono text-amber-500/50 uppercase tracking-widest">
+                Thread: {aiState.toUpperCase()}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Status Indicators */}
+        <div className="hidden md:flex items-center gap-4 text-[9px] font-bold text-white/20 uppercase tracking-tighter">
+          <div className="flex items-center gap-2 border border-white/5 px-3 py-1.5 rounded-full bg-white/[0.02]">
+            <ShieldAlert size={10} className="text-cyan-500" />
+            SECURE_LINK
           </div>
         </div>
       </div>
 
-      {/* Chat Space - Scrollable Area */}
-      {/* flex-1 ve overflow-y-auto burada hayati önem taşıyor */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide bg-[#050505]/30">
-        {chatMessages.map((msg) => (
-          <motion.div 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            key={msg.id} 
-            className={cn("flex flex-col", msg.role === 'user' ? "items-end" : "items-start")}
-          >
-            <div className={cn(
-              "max-w-[85%] p-4 rounded-2xl text-[11px] font-mono leading-relaxed shadow-lg",
-              msg.role === 'user' 
-                ? "bg-cyan-500 text-black font-black rounded-tr-none" 
-                : "bg-white/5 border border-white/10 text-cyan-50 rounded-tl-none"
-            )}>
-              {msg.content}
-            </div>
-          </motion.div>
-        ))}
+      {/* Chat Area */}
+      <div className="flex-1 overflow-y-auto p-8 space-y-8 scrollbar-hide bg-[radial-gradient(circle_at_top_right,rgba(6,182,212,0.02),transparent)]">
+        <AnimatePresence mode="popLayout">
+          {chatMessages.map((msg) => (
+            <motion.div 
+              initial={{ opacity: 0, x: msg.role === 'user' ? 20 : -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              key={msg.id} 
+              className={cn("flex flex-col", msg.role === 'user' ? "items-end" : "items-start")}
+            >
+              <div className={cn(
+                "max-w-[80%] p-5 rounded-[1.5rem] text-[12px] font-mono leading-relaxed relative group",
+                msg.role === 'user' 
+                  ? "bg-cyan-600 text-black font-bold rounded-tr-none shadow-[0_10px_30px_rgba(6,182,212,0.2)]" 
+                  : "bg-white/[0.03] border border-white/10 text-cyan-50/80 rounded-tl-none backdrop-blur-md"
+              )}>
+                {msg.content}
+                <span className="absolute -bottom-5 text-[7px] text-white/10 uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
+                  {new Date(msg.timestamp).toLocaleTimeString()} // ID: {msg.id.slice(0,6)}
+                </span>
+              </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
         
         {isThinking && (
-          <div className="flex items-center gap-3 text-cyan-500/40 animate-pulse pb-4">
-            <Loader2 size={12} className="animate-spin" />
-            <span className="text-[9px] uppercase tracking-widest font-black">Sentinel is analyzing protocol state...</span>
-          </div>
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }}
+            className="flex items-center gap-4 text-cyan-500/60 bg-cyan-500/5 w-fit px-5 py-3 rounded-2xl border border-cyan-500/10"
+          >
+            <Loader2 size={14} className="animate-spin" />
+            <span className="text-[10px] uppercase tracking-[0.2em] font-black">
+              Sentinel is auditing hybrid state...
+            </span>
+          </motion.div>
         )}
-        <div ref={messagesEndRef} />
+        <div ref={messagesEndRef} className="h-4" />
       </div>
 
-      {/* Input Console - Fixed Height at Bottom */}
-      <form onSubmit={handleSend} className="shrink-0 p-5 bg-black/60 border-t border-white/5">
-        <div className="relative flex items-center group">
+      {/* Input Section */}
+      <div className="shrink-0 p-8 bg-[#020202]/80 border-t border-white/5 backdrop-blur-3xl">
+        <form onSubmit={handleSend} className="relative max-w-4xl mx-auto flex items-center group">
+          <div className="absolute left-5 text-cyan-500/40 group-focus-within:text-cyan-500 transition-colors">
+            <Cpu size={16} />
+          </div>
           <input 
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Enter secure directive..."
-            className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-4 px-6 pr-14 text-[11px] font-mono text-white placeholder:text-white/10 focus:outline-none focus:border-cyan-500/40 focus:bg-white/[0.05] transition-all"
+            placeholder="Invoke neural command or audit protocol..."
+            className="w-full bg-white/[0.02] border border-white/10 rounded-2xl py-5 pl-14 pr-16 text-[12px] font-mono text-white placeholder:text-white/10 focus:outline-none focus:border-cyan-500/30 focus:bg-white/[0.04] transition-all shadow-inner"
           />
           <button 
             type="submit" 
-            disabled={isThinking}
-            className="absolute right-2 p-3 text-cyan-500 hover:text-cyan-400 disabled:opacity-20 transition-all hover:scale-110 active:scale-95"
+            disabled={isThinking || !input.trim()}
+            className="absolute right-3 p-3 bg-cyan-500 text-black rounded-xl hover:bg-cyan-400 disabled:opacity-10 disabled:grayscale transition-all hover:scale-105 active:scale-95 shadow-lg shadow-cyan-500/20"
           >
             <Send size={18} />
           </button>
+        </form>
+        <div className="flex justify-center mt-4">
+          <span className="text-[7px] text-white/10 uppercase tracking-[0.5em]">
+            Neural Encryption Standard: AES-256-GCM
+          </span>
         </div>
-      </form>
+      </div>
     </div>
   );
 };

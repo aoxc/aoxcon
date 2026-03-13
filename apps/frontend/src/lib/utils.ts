@@ -1,43 +1,88 @@
 /**
- * @title AOXC Architecture Utility: Tailwind Class Merger
- * @notice Combines clsx and tailwind-merge for conflict-free dynamic styling.
- * @author AOXCAN Security Architecture
- * @dev In an Audit-level UI, this prevents "CSS Bloat" and "Specificity Wars."
- * It ensures that conditionally applied Tailwind classes do not conflict with 
- * base styles, preserving the integrity of the Neural OS design system.
- * * @param inputs - Array of class names, objects, or conditional expressions.
- * @returns Optimized tailwind class string.
+ * AOXC Architecture Utility Layer
+ *
+ * Security Profile
+ * - deterministic class merging
+ * - NaN-safe number formatting
+ * - cryptographically safe trace IDs
+ * - side-effect free helpers
  */
 
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
 
 /**
- * @dev Standard utility for merging Tailwind CSS classes with full support
- * for conditional logic and override resolution.
- * * Example usage:
- * cn("p-4 bg-black", isOnline ? "bg-emerald-500" : "bg-rose-500")
+ * Tailwind Class Combiner
+ *
+ * Combines clsx conditional class handling with tailwind-merge
+ * conflict resolution.
+ *
+ * Prevents:
+ * - Tailwind specificity conflicts
+ * - duplicated utility classes
+ * - conditional class collisions
  */
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
+export function cn(...inputs: ClassValue[]): string {
+  return twMerge(clsx(...inputs))
 }
 
 /**
- * @title Forensic Formatter: Token Units
- * @notice Standardizes display of AOXC and Ether values across the OS.
+ * Crypto Value Formatter
+ *
+ * Standardizes token display across AOXC Neural OS.
+ * Prevents UI corruption from NaN / Infinity values.
  */
-export const formatCryptoValue = (value: string | number, decimals: number = 2) => {
-  if (typeof value === 'string') value = parseFloat(value);
-  return new Intl.NumberFormat('en-US', {
+export function formatCryptoValue(
+  value: number | string | bigint | null | undefined,
+  decimals = 2
+): string {
+
+  let numeric: number
+
+  if (typeof value === "bigint") {
+    numeric = Number(value)
+  } else if (typeof value === "string") {
+    numeric = Number.parseFloat(value)
+  } else if (typeof value === "number") {
+    numeric = value
+  } else {
+    return "0"
+  }
+
+  if (!Number.isFinite(numeric)) {
+    return "0"
+  }
+
+  return new Intl.NumberFormat("en-US", {
     minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
-  }).format(value);
-};
+    maximumFractionDigits: decimals
+  }).format(numeric)
+}
 
 /**
- * @title Neural Pulse Generator
- * @notice Generates a timestamp-based ID for transient system logs.
+ * Trace ID Generator
+ *
+ * Generates a collision-resistant short identifier
+ * used for logs, UI traces and ephemeral events.
+ *
+ * Uses crypto API when available.
  */
-export const generateTraceId = () => {
-  return Math.random().toString(36).substring(2, 10).toUpperCase();
-};
+export function generateTraceId(length = 8): string {
+
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+  if (typeof crypto !== "undefined" && crypto.getRandomValues) {
+
+    const bytes = new Uint8Array(length)
+    crypto.getRandomValues(bytes)
+
+    return Array.from(bytes)
+      .map(b => alphabet[b % alphabet.length])
+      .join("")
+  }
+
+  // Fallback for non-crypto environments
+  return Array.from({ length })
+    .map(() => alphabet[Math.floor(Math.random() * alphabet.length)])
+    .join("")
+}
