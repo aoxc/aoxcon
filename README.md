@@ -1,270 +1,668 @@
 # AoxCon
 
-AoxCon is the unified coordination layer of the AOXC ecosystem.
+AoxCon is the coordination and operations layer for AOXC ecosystem services.
 
-It provides a single operational interface for managing blockchain integrations, AI services, and decentralized governance infrastructure across multiple networks.
+It brings together:
 
-The system is designed to orchestrate and control services across chains such as **XLayer, Sui, Cardano, and EVM-compatible networks**, while also integrating **AI-powered agents and DAO governance mechanisms** into a unified operational framework.
+- **AOXCHAIN network operations** (local-first RPC at `localhost:2626`)
+- **multi-network telemetry** (EVM, Solana, Bitcoin, AOXCHAIN)
+- **governance visibility** (proposal widgets and status)
+- **secure relay deployment workflows** (sequential multi-network contract rollout)
+- **AI-assisted operator interface**
 
-Rather than acting as a blockchain itself, AoxCon functions as an **ecosystem control layer** — a central surface where infrastructure, governance, automation, and community participation converge.
-
----
-
-# Vision
-
-Modern decentralized ecosystems are fragmented across many networks, tools, and operational layers.
-
-AoxCon exists to solve that fragmentation.
-
-The goal is to create a **single command surface** capable of coordinating:
-
-- multi-chain infrastructure
-- AI-driven automation
-- DAO governance systems
-- operational tooling
-- service orchestration
-
-Through AoxCon, the AOXC ecosystem aims to provide a **coherent operational environment** where blockchain services, community governance, and intelligent automation can interact seamlessly.
+The repository contains backend APIs, frontend dashboard, and CLI modules for unified operations.
 
 ---
 
-# Core Capabilities
+## Table of Contents
 
-### Multi-Chain Control
-
-AoxCon provides operational integration for multiple blockchain environments, including:
-
-- **XLayer**
-- **Sui**
-- **Cardano**
-- **EVM-compatible networks**
-
-Through a unified dispatch mechanism, these networks can be managed from a single backend gateway and control interface.
-
----
-
-### AI Integration
-
-The platform is designed to integrate **AI agents and automation systems** into the operational layer.
-
-AI components may assist with:
-
-- infrastructure monitoring
-- operational automation
-- governance analytics
-- service orchestration
-- community tooling
-
-AI agents operate as modular services that can be coordinated through the same dispatch system used for blockchain integrations.
+- [Architecture](#architecture)
+- [Repository Layout](#repository-layout)
+- [Core Features](#core-features)
+- [Configuration](#configuration)
+- [Backend API](#backend-api)
+- [Quick Start](#quick-start)
+- [Operational Flows](#operational-flows)
+- [Security Model](#security-model)
+- [Troubleshooting](#troubleshooting)
+- [Roadmap](#roadmap)
 
 ---
 
-### DAO Governance
+## Architecture
 
-AoxCon also acts as an operational interface for decentralized governance.
+AoxCon follows a layered architecture:
 
-DAO structures within the ecosystem can interact with infrastructure through controlled service adapters.
+1. **Backend (`apps/backend`)**
+   - Exposes API endpoints for health, AI analysis, AOXCHAIN status, governance, and relay deployments.
+   - Probes AOXCHAIN RPC with **local-first fallback strategy**.
+   - Applies request validation and optional token-based API protection.
 
-This allows governance processes to influence:
+2. **Frontend (`apps/frontend`)**
+   - Angular-based operations dashboard.
+   - Displays network cards, AOXCHAIN chain status, governance proposals, and relay queue state.
+   - Lets operators enqueue secure sequential relay deployments.
 
-- ecosystem parameters
-- operational actions
-- infrastructure coordination
-- community initiatives
-
-Governance decisions originate from the **community layer**, ensuring that the ecosystem remains decentralized in both philosophy and execution.
+3. **CLI (`apps/cli`)**
+   - Terminal operator tooling.
+   - Designed for scripted dispatch and operational workflows.
 
 ---
 
-# Repository Structure
+## Architecture
 
-The repository is organized into three primary application layers.
+AoxCon follows a layered architecture:
 
+1. **Backend (`apps/backend`)**
+   - Exposes API endpoints for health, AI analysis, AOXCHAIN status, governance, and relay deployments.
+   - Probes AOXCHAIN RPC with **local-first fallback strategy**.
+   - Applies request validation and optional token-based API protection.
 
+2. **Frontend (`apps/frontend`)**
+   - Angular-based operations dashboard.
+   - Displays network cards, AOXCHAIN chain status, governance proposals, and relay queue state.
+   - Lets operators enqueue secure sequential relay deployments.
+
+3. **CLI (`apps/cli`)**
+   - Terminal operator tooling.
+   - Designed for scripted dispatch and operational workflows.
+
+---
+
+## Repository Layout
+
+```text
 apps/
-├─ backend
-│ └─ service gateway and orchestration layer
-│
-├─ frontend
-│ └─ ecosystem management interface
-│
-└─ cli
-└─ operational command-line tooling
+  backend/    # API gateway + AOXCHAIN services
+  frontend/   # Operator dashboard UI
+  cli/        # Command-line operations tooling
+config/
+  services.json  # Service registry (AOXCHAIN + other network adapters)
+```
 
-
-Configuration for service integrations is defined in:
-
-
-config/services.json
-
-
-This file acts as the service registry describing available integrations such as blockchain networks and AI services.
+```text
+apps/
+  backend/    # API gateway + AOXCHAIN services
+  frontend/   # Operator dashboard UI
+  cli/        # Command-line operations tooling
+config/
+  services.json  # Service registry (AOXCHAIN + other network adapters)
+```
 
 ---
 
-# System Architecture
+## Core Features
 
-AoxCon follows a layered orchestration architecture designed to coordinate multiple external systems.
+### 1) AOXCHAIN Local-First RPC Integration
+The backend probes AOXCHAIN using this order:
 
-### Backend Gateway
+## Repository Layout
 
-The backend acts as the ecosystem gateway responsible for:
+```text
+apps/
+  backend/    # API gateway + AOXCHAIN services
+  frontend/   # Operator dashboard UI
+  cli/        # Command-line operations tooling
+config/
+  services.json  # Service registry (AOXCHAIN + other network adapters)
+```
+1. `http://localhost:2626` (primary)
+2. `https://aoxcore.com` (fallback)
 
-- routing service requests
-- coordinating blockchain integrations
-- dispatching actions to adapters
-- normalizing responses across services
+This allows local node preference with remote continuity when local RPC is unavailable.
 
-Each external system is integrated through a modular adapter.
+### 2) Unified Network Telemetry
+
+## Core Features
+
+### 1) AOXCHAIN Local-First RPC Integration
+
+The backend probes AOXCHAIN using this order:
+
+1. `http://localhost:2626` (primary)
+2. `https://aoxcore.com` (fallback)
+
+This allows local node preference with remote continuity when local RPC is unavailable.
+
+### 2) Unified Network Telemetry
+
+Frontend tracks and renders:
+
+- AOXCHAIN
+- EVM
+- Solana
+- Bitcoin
+
+Each network card includes status, block height, latency, throughput estimate, and visual state.
+Frontend tracks and renders:
+
+- AOXCHAIN
+- EVM
+- Solana
+- Bitcoin
+
+## Core Features
+
+### 1) AOXCHAIN Local-First RPC Integration
+
+The backend probes AOXCHAIN using this order:
+
+1. `http://localhost:2626` (primary)
+2. `https://aoxcore.com` (fallback)
+
+This allows local node preference with remote continuity when local RPC is unavailable.
+
+### 2) Unified Network Telemetry
+
+Frontend tracks and renders:
+
+- AOXCHAIN
+- EVM
+- Solana
+- Bitcoin
+
+Each network card includes status, block height, latency, throughput estimate, and visual state.
+Each network card includes status, block height, latency, throughput estimate, and visual state.
+
+### 3) Governance Visibility
+
+Dashboard includes AOXCHAIN governance proposal widgets with:
+
+- proposal id/title/status
+- yes/no values
+- participation ratio
+
+### 4) Secure Relay Deployment Queue
+
+Operators can submit a relay deployment job with:
+
+- `contractName`
+- `bytecode`
+- `targetNetworks[]`
+- `rpcMode` (`local-first` or `remote-first`)
+
+Backend validates payload shape and records deployment steps as sequential relay tasks.
+
+### 3) Governance Visibility
+
+Dashboard includes AOXCHAIN governance proposal widgets with:
+
+- proposal id/title/status
+- yes/no values
+- participation ratio
+
+### 4) Secure Relay Deployment Queue
+
+Operators can submit a relay deployment job with:
+
+- `contractName`
+- `bytecode`
+- `targetNetworks[]`
+- `rpcMode` (`local-first` or `remote-first`)
+
+Backend validates payload shape and records deployment steps as sequential relay tasks.
+
+### 3) Governance Visibility
+
+Dashboard includes AOXCHAIN governance proposal widgets with:
+
+- proposal id/title/status
+- yes/no values
+- participation ratio
+
+### 4) Secure Relay Deployment Queue
+
+Operators can submit a relay deployment job with:
+
+- `contractName`
+- `bytecode`
+- `targetNetworks[]`
+- `rpcMode` (`local-first` or `remote-first`)
+
+Backend validates payload shape and records deployment steps as sequential relay tasks.
+## Configuration
+
+### Service Registry
+
+`config/services.json` includes AOXCHAIN as RPC service:
+
+- `baseUrl`: `http://localhost:2626`
+- `fallbackUrl`: `https://aoxcore.com`
+
+### Backend Environment Variables
+
+Backend reads configuration from `apps/backend/src/config/index.js`:
+
+- `PORT` (default `5000`)
+- `NODE_ENV` (default `development`)
+- `LOG_LEVEL` (default `info`)
+- `GEMINI_API_KEY`
+- `SENTINEL_AUTH_TOKEN` (optional; enables auth on protected endpoints)
+- `AOXCHAIN_RPC_LOCAL` (default `http://localhost:2626`)
+- `AOXCHAIN_RPC_REMOTE` (default `https://aoxcore.com`)
+## Configuration
+
+### Service Registry
+
+`config/services.json` includes AOXCHAIN as RPC service:
+
+## Configuration
+
+### Service Registry
+
+`config/services.json` includes AOXCHAIN as RPC service:
+
+- `baseUrl`: `http://localhost:2626`
+- `fallbackUrl`: `https://aoxcore.com`
+
+### Backend Environment Variables
+
+Backend reads configuration from `apps/backend/src/config/index.js`:
+
+- `PORT` (default `5000`)
+- `NODE_ENV` (default `development`)
+- `LOG_LEVEL` (default `info`)
+- `GEMINI_API_KEY`
+- `SENTINEL_AUTH_TOKEN` (optional; enables auth on protected endpoints)
+- `AOXCHAIN_RPC_LOCAL` (default `http://localhost:2626`)
+- `AOXCHAIN_RPC_REMOTE` (default `https://aoxcore.com`)
+- `baseUrl`: `http://localhost:2626`
+- `fallbackUrl`: `https://aoxcore.com`
+
+### Backend Environment Variables
+
+Backend reads configuration from `apps/backend/src/config/index.js`:
+
+- `PORT` (default `5000`)
+- `NODE_ENV` (default `development`)
+- `LOG_LEVEL` (default `info`)
+- `GEMINI_API_KEY`
+- `SENTINEL_AUTH_TOKEN` (optional; enables auth on protected endpoints)
+- `AOXCHAIN_RPC_LOCAL` (default `http://localhost:2626`)
+- `AOXCHAIN_RPC_REMOTE` (default `https://aoxcore.com`)
 
 ---
 
-### Web Interface
+## Backend API
 
-The frontend provides a lightweight administrative and monitoring interface.
+Base URL: `http://localhost:5000/api/v1`
 
-It allows operators and ecosystem participants to:
+### Health
 
-- inspect service health
-- interact with integrations
-- observe governance actions
-- manage operational workflows
+- `GET /health`
 
----
+## Backend API
 
-### CLI
+Base URL: `http://localhost:5000/api/v1`
 
-The command-line interface provides deterministic operational tooling for scripting, automation, and infrastructure control.
+### Health
 
-It exposes the same dispatch functionality used by the backend.
+- `GET /health`
 
----
+Returns service status.
 
-# Unified Dispatch Model
+### AI Sentinel
 
-All service interactions are routed through a single gateway endpoint.
+- `POST /sentinel/analyze` (auth middleware enabled)
 
+### AOXCHAIN Status
 
-POST /dispatch
+- `GET /aoxchain/status`
+- optional query: `?rpc=<custom_rpc>`
 
+Returns selected RPC endpoint, chain id, block number, latency, and queue depth.
 
-The destination system is selected using a target identifier.
+### AOXCHAIN Governance
 
-Example targets:
+- `GET /aoxchain/governance/proposals`
 
+Returns proposal list used by dashboard widgets.
 
-evm
-xlayer
-sui
-cardano
-ai
+### AOXCHAIN Relay Deployments
 
+- `GET /aoxchain/deployments/relay` (auth middleware enabled)
+- `POST /aoxchain/deployments/relay` (auth + zod validation)
 
-This architecture allows the system to remain extensible while keeping the integration model consistent across services.
+Payload schema for POST:
 
----
-
-# Quick Start
-
-Start the backend service.
-
-
-node apps/backend/src/server.js
-
-
-Start the frontend interface.
-
-
-node apps/frontend/src/server.js
-
-
-Use the CLI to interact with the system.
-
-
-node apps/cli/src/cli.js status
-
-
-Example dispatch command.
-
-
-node apps/cli/src/cli.js dispatch evm wallet.balance '{"address":"0x123"}'
-
-
-The CLI forwards the request to the backend, which routes the action to the appropriate adapter.
+```json
+{
+  "contractName": "RelayVault",
+  "bytecode": "0x6080...",
+  "targetNetworks": ["aoxchain", "evm", "solana"],
+  "rpcMode": "local-first"
+}
+```
 
 ---
 
-# Integration Architecture
+## Quick Start
 
-External services are integrated through adapters that expose a minimal standardized interface.
+## 1) Install dependencies
 
+```bash
+# backend
+cd apps/backend && npm install
 
-health()
-dispatch(action, payload)
-normalizeError(error)
+# frontend
+cd ../frontend && yarn install
+```
 
+## 2) Run backend
 
-This ensures that all blockchain networks, AI systems, and external services behave consistently from the perspective of the gateway.
+```bash
+cd apps/backend
+npm start
+```
 
----
+Backend default URL: `http://localhost:5000`
 
-# Ecosystem Expansion Strategy
+## 3) Run frontend
 
-The integration roadmap follows a phased approach.
+```bash
+cd apps/frontend
+GEMINI_API_KEY=dummy yarn dev
+```
 
-### Phase 1 — EVM Integration
+Frontend default URL: `http://localhost:3000`
 
-Initial infrastructure will focus on integrating EVM-compatible networks including XLayer.
+## 4) Verify API quickly
 
-### Phase 2 — Multi-Chain Expansion
-
-Additional blockchain environments such as Sui and Cardano will be connected through the adapter model.
-
-### Phase 3 — AI Services
-
-AI agents and automation tools will be integrated into the orchestration layer.
-
-### Phase 4 — DAO Governance Integration
-
-Governance systems will be connected to operational services, allowing community decisions to influence ecosystem infrastructure.
-
----
-
-# Current Status
-
-The repository currently contains an early infrastructure skeleton.
-
-Core architectural components are implemented, but some service integrations still return stub responses while adapters are under development.
-
-This approach allows the system architecture and dispatch model to be validated before full integration of upstream services.
+```bash
+curl http://localhost:5000/api/v1/health
+curl "http://localhost:5000/api/v1/aoxchain/status?rpc=http://localhost:2626"
+curl http://localhost:5000/api/v1/aoxchain/governance/proposals
+```
 
 ---
 
-# Development Direction
+## Operational Flows
 
-The immediate development focus includes:
+### Chain Status Monitoring
 
-- stabilizing the dispatch architecture
-- integrating EVM infrastructure
-- expanding multi-chain adapters
-- developing the ecosystem management interface
-- connecting AI operational services
-- enabling DAO governance interactions
+1. Frontend requests `/aoxchain/status`.
+2. Backend probes local RPC first, then fallback.
+3. Dashboard updates network card and latency/height values.
 
-As the ecosystem evolves, AoxCon will continue to expand as the operational coordination layer of the AOXC environment.
+### Governance Monitoring
 
----
+1. Frontend requests `/aoxchain/governance/proposals`.
+2. Response is rendered in governance proposal widget panel.
 
-# Philosophy
+### Multi-Network Relay Deployment
 
-AoxCon reflects the broader AOXC philosophy:
-
-**decentralized ownership, coordinated infrastructure, and community-driven governance.**
-
-The system is not designed to centralize control, but to **provide a shared operational surface through which decentralized actors can coordinate complex systems**.
+1. Operator enters contract + target networks in dashboard.
+2. Frontend posts deployment payload to backend.
+3. Backend validates payload and enqueues sequential relay steps.
+4. Dashboard polls queue and displays current jobs.
 
 ---
 
-# License
+## Security Model
 
-MIT License
+- **Validation-first inputs** with Zod for deployment payloads.
+- **Optional token auth** via `SENTINEL_AUTH_TOKEN` + `x-sentinel-token` header.
+- **No secrets in frontend code** (runtime env usage expected).
+- **Local-first RPC** reduces dependency on external endpoints.
+
+> Note: Current deployment queue is in-memory. For production durability, move queue state to persistent storage (e.g., PostgreSQL/Redis).
+
+---
+
+## Troubleshooting
+
+### Frontend production build fails on Google Fonts inlining
+
+In restricted environments, `yarn build` may fail due to external font fetch restrictions.
+
+Use dev build for local validation:
+
+```bash
+yarn ng build --configuration development
+```
+
+### AOXCHAIN status returns unavailable
+Returns service status.
+
+### AI Sentinel
+
+- `POST /sentinel/analyze` (auth middleware enabled)
+
+### AOXCHAIN Status
+
+- `GET /aoxchain/status`
+- optional query: `?rpc=<custom_rpc>`
+
+Returns selected RPC endpoint, chain id, block number, latency, and queue depth.
+
+### AOXCHAIN Governance
+
+- `GET /aoxchain/governance/proposals`
+
+Returns proposal list used by dashboard widgets.
+
+### AOXCHAIN Relay Deployments
+
+- `GET /aoxchain/deployments/relay` (auth middleware enabled)
+- `POST /aoxchain/deployments/relay` (auth + zod validation)
+
+Payload schema for POST:
+
+```json
+{
+  "contractName": "RelayVault",
+  "bytecode": "0x6080...",
+  "targetNetworks": ["aoxchain", "evm", "solana"],
+  "rpcMode": "local-first"
+}
+```
+
+---
+
+## Quick Start
+
+## 1) Install dependencies
+
+```bash
+# backend
+cd apps/backend && npm install
+
+# frontend
+cd ../frontend && yarn install
+```
+
+## 2) Run backend
+
+```bash
+cd apps/backend
+npm start
+```
+
+Backend default URL: `http://localhost:5000`
+
+## 3) Run frontend
+
+```bash
+cd apps/frontend
+GEMINI_API_KEY=dummy yarn dev
+```
+
+Frontend default URL: `http://localhost:3000`
+
+## 4) Verify API quickly
+
+```bash
+curl http://localhost:5000/api/v1/health
+curl "http://localhost:5000/api/v1/aoxchain/status?rpc=http://localhost:2626"
+curl http://localhost:5000/api/v1/aoxchain/governance/proposals
+```
+
+---
+
+## Operational Flows
+
+### Chain Status Monitoring
+
+1. Frontend requests `/aoxchain/status`.
+2. Backend probes local RPC first, then fallback.
+3. Dashboard updates network card and latency/height values.
+
+### Governance Monitoring
+
+1. Frontend requests `/aoxchain/governance/proposals`.
+2. Response is rendered in governance proposal widget panel.
+
+### Multi-Network Relay Deployment
+
+1. Operator enters contract + target networks in dashboard.
+2. Frontend posts deployment payload to backend.
+3. Backend validates payload and enqueues sequential relay steps.
+4. Dashboard polls queue and displays current jobs.
+
+---
+
+## Security Model
+
+- **Validation-first inputs** with Zod for deployment payloads.
+- **Optional token auth** via `SENTINEL_AUTH_TOKEN` + `x-sentinel-token` header.
+- **No secrets in frontend code** (runtime env usage expected).
+- **Local-first RPC** reduces dependency on external endpoints.
+
+> Note: Current deployment queue is in-memory. For production durability, move queue state to persistent storage (e.g., PostgreSQL/Redis).
+
+- Ensure local node is running at `localhost:2626`.
+- Confirm `AOXCHAIN_RPC_LOCAL` is correct.
+- Check fallback endpoint reachability (`aoxcore.com`).
+
+### Protected endpoints return 401
+
+Set or remove `SENTINEL_AUTH_TOKEN` intentionally.
+If set, include header:
+
+```text
+x-sentinel-token: <token>
+```
+
+---
+
+
+## AOX Wallet Architecture (Web + Mobile)
+
+A reference wallet blueprint for AOXCHAIN coin type `2626` is provided under:
+## Troubleshooting
+
+### Frontend production build fails on Google Fonts inlining
+
+In restricted environments, `yarn build` may fail due to external font fetch restrictions.
+
+Use dev build for local validation:
+
+```bash
+yarn ng build --configuration development
+```
+
+### AOXCHAIN status returns unavailable
+
+### Chain Status Monitoring
+
+1. Frontend requests `/aoxchain/status`.
+2. Backend probes local RPC first, then fallback.
+3. Dashboard updates network card and latency/height values.
+
+### Governance Monitoring
+
+1. Frontend requests `/aoxchain/governance/proposals`.
+2. Response is rendered in governance proposal widget panel.
+
+### Multi-Network Relay Deployment
+
+1. Operator enters contract + target networks in dashboard.
+2. Frontend posts deployment payload to backend.
+3. Backend validates payload and enqueues sequential relay steps.
+4. Dashboard polls queue and displays current jobs.
+
+---
+
+## Security Model
+
+- **Validation-first inputs** with Zod for deployment payloads.
+- **Optional token auth** via `SENTINEL_AUTH_TOKEN` + `x-sentinel-token` header.
+- **No secrets in frontend code** (runtime env usage expected).
+- **Local-first RPC** reduces dependency on external endpoints.
+
+> Note: Current deployment queue is in-memory. For production durability, move queue state to persistent storage (e.g., PostgreSQL/Redis).
+
+- Ensure local node is running at `localhost:2626`.
+- Confirm `AOXCHAIN_RPC_LOCAL` is correct.
+- Check fallback endpoint reachability (`aoxcore.com`).
+
+### Protected endpoints return 401
+
+Set or remove `SENTINEL_AUTH_TOKEN` intentionally.
+If set, include header:
+
+```text
+x-sentinel-token: <token>
+```
+
+- `wallets/aox-wallet-core/`
+
+It includes:
+
+
+
+## AOX Wallet Architecture (Web + Mobile)
+
+A reference wallet blueprint for AOXCHAIN coin type `2626` is provided under:
+
+- `wallets/aox-wallet-core/`
+
+It includes:
+
+- BIP44 path helper (`m/44'/2626'/account'/change/index`)
+- Chrome web wallet template
+- iOS secure wallet bridge contract
+- Chrome mobile wrapper strategy
+- Threat model and security controls
+## Troubleshooting
+
+### Frontend production build fails on Google Fonts inlining
+
+In restricted environments, `yarn build` may fail due to external font fetch restrictions.
+
+Use dev build for local validation:
+
+```bash
+yarn ng build --configuration development
+```
+
+### AOXCHAIN status returns unavailable
+
+- Ensure local node is running at `localhost:2626`.
+- Confirm `AOXCHAIN_RPC_LOCAL` is correct.
+- Check fallback endpoint reachability (`aoxcore.com`).
+
+### Protected endpoints return 401
+
+Set or remove `SENTINEL_AUTH_TOKEN` intentionally.
+If set, include header:
+
+```text
+x-sentinel-token: <token>
+```
+
+---
+
+## Roadmap
+
+- Persistent relay queue storage and signed deployment receipts
+- Real proposal ingestion from AOXCHAIN governance contracts
+- Role-based access control for sensitive operations
+- Transaction simulation + preflight checks before relay enqueue
+- Full CI test matrix for backend + frontend + integration contracts
+
+---
+
+## License
+
+See [LICENSE](./LICENSE).
