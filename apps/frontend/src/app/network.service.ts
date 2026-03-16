@@ -304,6 +304,9 @@ export class NetworkService implements OnDestroy {
 
   private handleError(id: string): void {
     this.updateNetwork(id, { status: 'error', tps: 0, latency: 0 });
+
+  private handleError(id: string): void {
+    this.updateNetwork(id, { status: 'error', tps: 0, latency: 0 });
       const latency = Math.round(performance.now() - start);
 
       this.networksData.update((items) =>
