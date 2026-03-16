@@ -66,8 +66,6 @@ export class NetworkService implements OnDestroy {
   public readonly networksData = signal<NetworkData[]>([
     this.getDefaultData('aoxchain', 'AOXCHAIN'),
     this.getDefaultData('evm', 'EVM'),
-    this.getDefaultData('evm', 'EVM'),
-    this.getDefaultData('aoxchain', 'AOXCHAIN'),
     this.getDefaultData('solana', 'Solana'),
     this.getDefaultData('btc', 'Bitcoin')
   ]);
@@ -77,10 +75,6 @@ export class NetworkService implements OnDestroy {
 
   public readonly networks = computed(() => this.networksData());
   public readonly globalTPS = computed(() => this.networks().reduce((acc, n) => acc + n.tps, 0));
-  public readonly networks = computed(() => this.networksData());
-  public readonly globalTPS = computed(() =>
-    this.networks().reduce((acc, n) => acc + n.tps, 0)
-  );
 
   constructor() {
     if (this.isBrowser) this.initSovereignSync();
@@ -93,13 +87,11 @@ export class NetworkService implements OnDestroy {
       this.refreshAll();
       this.refreshGovernanceAndRelay();
     }, 60000);
-    this.heavyRefreshInterval = setInterval(() => this.refreshAll(), 60000);
     this.lightSimulationInterval = setInterval(() => this.simulateNeuralJitter(), 3000);
   }
 
   private simulateNeuralJitter(): void {
     const jitter = () => (Math.random() - 0.5) * 0.5;
-    this.networksData.update((items) => items.map((item) => item.status === 'connected' ? ({ ...item, tps: Math.max(0, item.tps + jitter()) }) : item));
     this.networksData.update((items) =>
       items.map((item) =>
         item.status === 'connected' ? { ...item, tps: Math.max(0, item.tps + jitter()) } : item
@@ -126,7 +118,7 @@ export class NetworkService implements OnDestroy {
   public async fetchGovernanceProposals(): Promise<void> {
     try {
       const response = await fetch(`${this.backendBase}/aoxchain/governance/proposals`);
-      const payload = await response.json() as { proposals: GovernanceProposal[] };
+      const payload = (await response.json()) as { proposals: GovernanceProposal[] };
       this.proposals.set(payload.proposals || []);
     } catch {
       this.proposals.set([]);
@@ -137,7 +129,7 @@ export class NetworkService implements OnDestroy {
     try {
       const response = await fetch(`${this.backendBase}/aoxchain/deployments/relay`);
       if (!response.ok) return;
-      const payload = await response.json() as { deployments: RelayDeployment[] };
+      const payload = (await response.json()) as { deployments: RelayDeployment[] };
       this.relayDeployments.set(payload.deployments || []);
     } catch {
       this.relayDeployments.set([]);
@@ -159,28 +151,6 @@ export class NetworkService implements OnDestroy {
     }
   }
 
-  public networkColor(id: string): string {
-    const map: Record<string, string> = { evm: 'var(--color-xlayer)', aoxchain: '#10b981', solana: '#14f195', btc: '#f7931a' };
-
-
-    this.aiService.addLog('AI-Sentinel', 'Initiating 60s infrastructure deep scan...', 'info');
-
-    const jobs = [
-      this.fetchNetworkData('evm'),
-      this.fetchNetworkData('aoxchain'),
-      this.fetchNetworkData('solana'),
-      this.fetchNetworkData('btc')
-    ];
-
-    Promise.all(jobs)
-      .then((latencies) => {
-        const avgLat = Math.round(latencies.reduce((a, b) => a + b, 0) / latencies.length);
-        this.aiService.addLog('Sync-Master', `Deep scan complete. Avg Neural Latency: ${avgLat}ms`, 'info');
-      })
-      .catch(() => {
-        this.aiService.addLog('System-Core', 'Sovereign sync cycle interrupted.', 'critical');
-      });
-  }
 
   public networkColor(id: string): string {
     const map: Record<string, string> = {
@@ -193,29 +163,6 @@ export class NetworkService implements OnDestroy {
   }
 
   public networkIcon(id: string): string {
-    const map: Record<string, string> = { evm: 'fa-bolt-lightning', aoxchain: 'fa-link', solana: 'fa-s', btc: 'fa-bitcoin-sign' };
-    return map[id] ?? 'fa-circle-nodes';
-  }
-
-  private async fetchAoxchainData(): Promise<void> {
-    const start = performance.now();
-    try {
-      const statusResponse = await fetch(`${this.backendBase}/aoxchain/status?rpc=http://localhost:2626`);
-      const status = await statusResponse.json() as AoxchainStatusResponse;
-
-      this.updateNetwork('aoxchain', {
-        status: status.ok ? 'connected' : 'error',
-        blockHeight: status.blockNumber?.toString() ?? 'N/A',
-        gasPrice: 'AOXC gas',
-        tps: 45 + Math.random() * 15,
-        latency: status.latencyMs ?? Math.round(performance.now() - start),
-      });
-    } catch {
-      this.handleError('aoxchain');
-    }
-  }
-
-  private async fetchNetworkData(id: string): Promise<void> {
     const map: Record<string, string> = {
       evm: 'fa-bolt-lightning',
       aoxchain: 'fa-link',
@@ -225,7 +172,25 @@ export class NetworkService implements OnDestroy {
     return map[id] ?? 'fa-circle-nodes';
   }
 
-  private async fetchNetworkData(id: string): Promise<number> {
+  private async fetchAoxchainData(): Promise<void> {
+    const start = performance.now();
+    try {
+      const statusResponse = await fetch(`${this.backendBase}/aoxchain/status?rpc=http://localhost:2626`);
+      const status = (await statusResponse.json()) as AoxchainStatusResponse;
+
+      this.updateNetwork('aoxchain', {
+        status: status.ok ? 'connected' : 'error',
+        blockHeight: status.blockNumber?.toString() ?? 'N/A',
+        gasPrice: 'AOXC gas',
+        tps: 45 + Math.random() * 15,
+        latency: status.latencyMs ?? Math.round(performance.now() - start)
+      });
+    } catch {
+      this.handleError('aoxchain');
+    }
+  }
+
+  private async fetchNetworkData(id: 'evm' | 'solana' | 'btc'): Promise<void> {
     const start = performance.now();
 
     try {
@@ -235,35 +200,18 @@ export class NetworkService implements OnDestroy {
 
       if (id === 'evm') {
         const response = await fetch('https://rpc.ankr.com/eth', {
-          method: 'POST', headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_blockNumber', params: [] })
-        });
-        const payload = await response.json() as { result?: string };
-        blockHeight = payload.result ? parseInt(payload.result, 16).toString() : 'N/A';
-        gasPrice = 'EVM gas';
-      if (id === 'evm' || id === 'aoxchain') {
-        const response = await fetch('https://rpc.ankr.com/eth', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({
-            jsonrpc: '2.0',
-            id: 1,
-            method: 'eth_blockNumber',
-            params: []
-          })
+          body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_blockNumber', params: [] })
         });
         const payload = (await response.json()) as { result?: string };
         blockHeight = payload.result ? parseInt(payload.result, 16).toString() : 'N/A';
-        gasPrice = id === 'aoxchain' ? 'AOXC native' : 'EVM gas';
+        gasPrice = 'EVM gas';
         tps = 12 + Math.random() * 10;
       }
 
       if (id === 'solana') {
         const response = await fetch('https://api.mainnet-beta.solana.com', {
-          method: 'POST', headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'getSlot' })
-        });
-        const payload = await response.json() as { result?: number };
           method: 'POST',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'getSlot' })
@@ -277,8 +225,6 @@ export class NetworkService implements OnDestroy {
       if (id === 'btc') {
         const response = await fetch('https://blockstream.info/api/blocks/tip/height');
         blockHeight = await response.text();
-        const height = await response.text();
-        blockHeight = height;
         gasPrice = 'sat/vB';
         tps = 7 + Math.random() * 2;
       }
@@ -288,7 +234,7 @@ export class NetworkService implements OnDestroy {
         blockHeight,
         gasPrice,
         tps,
-        latency: Math.round(performance.now() - start),
+        latency: Math.round(performance.now() - start)
       });
     } catch {
       this.handleError(id);
@@ -296,57 +242,17 @@ export class NetworkService implements OnDestroy {
   }
 
   private updateNetwork(id: string, patch: Partial<NetworkData>): void {
-    this.networksData.update((items) => items.map((item) => item.id === id ? ({ ...item, ...patch, lastUpdated: Date.now() }) : item));
-  }
-
-  private handleError(id: string): void {
-    this.updateNetwork(id, { status: 'error', tps: 0, latency: 0 });
-
-  private handleError(id: string): void {
-    this.updateNetwork(id, { status: 'error', tps: 0, latency: 0 });
-
-  private handleError(id: string): void {
-    this.updateNetwork(id, { status: 'error', tps: 0, latency: 0 });
-
-  private handleError(id: string): void {
-    this.updateNetwork(id, { status: 'error', tps: 0, latency: 0 });
-      const latency = Math.round(performance.now() - start);
-
-      this.networksData.update((items) =>
-        items.map((item) =>
-          item.id === id
-            ? {
-                ...item,
-                status: 'connected',
-                blockHeight,
-                gasPrice,
-                tps,
-                latency,
-                lastUpdated: Date.now()
-              }
-            : item
-        )
-      );
-
-      return latency;
-    } catch {
-      this.handleError(id);
-      return 0;
-    }
-  }
-
-  private handleError(id: string): void {
     this.networksData.update((items) =>
-      items.map((item) =>
-        item.id === id ? { ...item, status: 'error', tps: 0, latency: 0 } : item
-      )
+      items.map((item) => (item.id === id ? { ...item, ...patch, lastUpdated: Date.now() } : item))
     );
+  }
+
+  private handleError(id: string): void {
+    this.updateNetwork(id, { status: 'error', tps: 0, latency: 0 });
     this.aiService.addLog('System-Node', `Critical: ${id.toUpperCase()} RPC unreachable.`, 'critical');
   }
 
   private getDefaultData(id: string, name: string): NetworkData {
-    return { id, name, status: 'loading', blockHeight: '...', gasPrice: '...', tps: 0, latency: 0, lastUpdated: 0 };
-
     return {
       id,
       name,
