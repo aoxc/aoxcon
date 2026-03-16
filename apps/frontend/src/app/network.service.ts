@@ -162,6 +162,7 @@ export class NetworkService implements OnDestroy {
   public networkColor(id: string): string {
     const map: Record<string, string> = { evm: 'var(--color-xlayer)', aoxchain: '#10b981', solana: '#14f195', btc: '#f7931a' };
 
+
     this.aiService.addLog('AI-Sentinel', 'Initiating 60s infrastructure deep scan...', 'info');
 
     const jobs = [
@@ -297,6 +298,9 @@ export class NetworkService implements OnDestroy {
   private updateNetwork(id: string, patch: Partial<NetworkData>): void {
     this.networksData.update((items) => items.map((item) => item.id === id ? ({ ...item, ...patch, lastUpdated: Date.now() }) : item));
   }
+
+  private handleError(id: string): void {
+    this.updateNetwork(id, { status: 'error', tps: 0, latency: 0 });
 
   private handleError(id: string): void {
     this.updateNetwork(id, { status: 'error', tps: 0, latency: 0 });
