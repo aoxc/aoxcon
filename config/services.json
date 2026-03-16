@@ -14,6 +14,12 @@
       "description": "EVM integration backend + CLI adapters"
     },
     {
+      "name": "aoxchain",
+      "type": "http",
+      "baseUrl": "http://localhost:8100",
+      "description": "New AOXCHAIN service gateway integration"
+    },
+    {
       "name": "solana",
       "type": "http",
       "baseUrl": "http://localhost:8002",
