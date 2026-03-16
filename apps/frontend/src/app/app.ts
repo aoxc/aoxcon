@@ -51,7 +51,7 @@ export class App implements OnDestroy {
 
   // --- UI STATE ---
   public readonly activeTab = signal<'overview' | 'networks' | 'ai-builder' | 'dao'>('overview');
-  public readonly activeNetwork = signal<'evm' | 'move' | 'plutus' | null>(null);
+  public readonly activeNetwork = signal<string | null>(null);
   
   constructor() {
     /**
@@ -97,7 +97,7 @@ export class App implements OnDestroy {
     }
   }
 
-  public setNetwork(network: 'evm' | 'move' | 'plutus'): void {
+  public setNetwork(network: string): void {
     this.activeNetwork.set(network);
     this.activeTab.set('networks');
   }

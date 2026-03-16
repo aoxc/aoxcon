@@ -1,5 +1,5 @@
 @if (!walletService.wallet().connected) {
-  <button (click)="toggleWalletModal()" class="px-6 py-3 bg-[var(--color-sui)] text-black rounded-xl font-black text-[10px] uppercase tracking-[0.2em] shadow-lg">
+  <button (click)="walletService.connect('evm')" class="px-6 py-3 bg-[var(--color-sui)] text-black rounded-xl font-black text-[10px] uppercase tracking-[0.2em] shadow-lg">
     {{ langService.t('connectWallet') }}
   </button>
 } @else {
