@@ -1,18 +1,11 @@
 import { Injectable, signal, computed, inject, PLATFORM_ID, OnDestroy } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { createPublicClient, http, formatGwei } from 'viem';
-import { mainnet } from 'viem/chains';
-import { SuiClient, getFullnodeUrl } from '@mysten/sui.js/client';
 import { AIService } from './ai.service';
 
-/**
- * 🛰️ NETWORK ARCHITECTURE INTERFACES
- */
-export type NetworkId = 'evm' | 'move' | 'plutus';
-export type NetworkStatus = 'connected' | 'error' | 'loading' | 'syncing';
+export type NetworkStatus = 'connected' | 'error' | 'loading';
 
 export interface NetworkData {
-  id: NetworkId;
+  id: string;
   name: string;
   status: NetworkStatus;
   blockHeight: string;
@@ -22,171 +15,224 @@ export interface NetworkData {
   latency: number;
 }
 
-// Cardano API Response Interface to replace 'any'
-interface KoiosTipResponse {
-  block_no: number;
-  hash: string;
-  epoch_no: number;
-  abs_slot: number;
-  epoch_slot: number;
-  block_time: number;
+export interface GovernanceProposal {
+  id: string;
+  title: string;
+  status: string;
+  yes: number;
+  no: number;
+  quorum: number;
+  participation: number;
+  endAt: number;
+}
+
+export interface RelayDeploymentPayload {
+  contractName: string;
+  bytecode: string;
+  targetNetworks: string[];
+  rpcMode: 'local-first' | 'remote-first';
+}
+
+export interface RelayDeployment {
+  id: string;
+  contractName: string;
+  bytecodeHash: string;
+  targetNetworks: string[];
+  status: string;
+  rpcMode: 'local-first' | 'remote-first';
+  createdAt: number;
+  security: { staticScan: string; reentrancyGuard: string; relayPolicy: string };
+  steps: Array<{ index: number; network: string; status: string }>;
+}
+
+interface AoxchainStatusResponse {
+  ok: boolean;
+  rpc: string;
+  chainId: string | null;
+  blockNumber: number | null;
+  latencyMs: number | null;
 }
 
 @Injectable({ providedIn: 'root' })
 export class NetworkService implements OnDestroy {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
-  private readonly aiService = inject(AIService); 
-  
-  // FIX: Replaced 'any' with Nodejs.Timeout or number for browser compatibility
+  private readonly aiService = inject(AIService);
+  private readonly backendBase = 'http://localhost:5000/api/v1';
+
   private heavyRefreshInterval: ReturnType<typeof setInterval> | undefined;
   private lightSimulationInterval: ReturnType<typeof setInterval> | undefined;
 
-  // --- REAKTİF STATE ---
-  public readonly xLayerData = signal<NetworkData>(this.getDefaultData('evm', 'X Layer'));
-  public readonly suiData = signal<NetworkData>(this.getDefaultData('move', 'Sui'));
-  public readonly cardanoData = signal<NetworkData>(this.getDefaultData('plutus', 'Cardano'));
-
-  public readonly networks = computed(() => [
-    this.xLayerData(),
-    this.suiData(),
-    this.cardanoData()
+  public readonly networksData = signal<NetworkData[]>([
+    this.getDefaultData('aoxchain', 'AOXCHAIN'),
+    this.getDefaultData('evm', 'EVM'),
+    this.getDefaultData('solana', 'Solana'),
+    this.getDefaultData('btc', 'Bitcoin')
   ]);
 
-  public readonly globalTPS = computed(() => 
-    this.networks().reduce((acc, n) => acc + n.tps, 0)
-  );
+  public readonly proposals = signal<GovernanceProposal[]>([]);
+  public readonly relayDeployments = signal<RelayDeployment[]>([]);
+
+  public readonly networks = computed(() => this.networksData());
+  public readonly globalTPS = computed(() => this.networks().reduce((acc, n) => acc + n.tps, 0));
 
   constructor() {
-    if (this.isBrowser) {
-      this.initSovereignSync();
-    }
+    if (this.isBrowser) this.initSovereignSync();
   }
 
   private initSovereignSync(): void {
     this.refreshAll();
-    // 60s Deep Scan
-    this.heavyRefreshInterval = setInterval(() => this.refreshAll(), 60000);
-    // 3s Neural Jitter
+    this.refreshGovernanceAndRelay();
+    this.heavyRefreshInterval = setInterval(() => {
+      this.refreshAll();
+      this.refreshGovernanceAndRelay();
+    }, 60000);
     this.lightSimulationInterval = setInterval(() => this.simulateNeuralJitter(), 3000);
   }
 
   private simulateNeuralJitter(): void {
     const jitter = () => (Math.random() - 0.5) * 0.5;
-    
-    this.xLayerData.update(d => d.status === 'connected' ? ({ ...d, tps: Math.max(0, d.tps + jitter()) }) : d);
-    this.suiData.update(d => d.status === 'connected' ? ({ ...d, tps: Math.max(0, d.tps + jitter()) }) : d);
-    this.cardanoData.update(d => d.status === 'connected' ? ({ ...d, tps: Math.max(0, d.tps + jitter()) }) : d);
+    this.networksData.update((items) => items.map((item) => item.status === 'connected' ? ({ ...item, tps: Math.max(0, item.tps + jitter()) }) : item));
   }
-
-  // --- REAL RPC FETCH ENGINES ---
-
-  async fetchXLayerData(): Promise<number> {
-    const start = performance.now();
-    try {
-      const client = createPublicClient({ chain: mainnet, transport: http('https://rpc.xlayer.tech') });
-      const [block, gas] = await Promise.all([
-        client.getBlock({ blockTag: 'latest' }),
-        client.getGasPrice()
-      ]);
-
-      const latency = Math.round(performance.now() - start);
-      this.xLayerData.set({
-        id: 'evm',
-        name: 'X Layer',
-        status: 'connected',
-        blockHeight: block.number.toString(),
-        gasPrice: `${parseFloat(formatGwei(gas)).toFixed(2)} Gwei`,
-        tps: parseFloat((block.transactions.length / 2).toFixed(1)),
-        latency,
-        lastUpdated: Date.now()
-      });
-      return latency;
-    } catch (_error) {
-      this.handleError('evm', _error);
-      return 0;
-    }
-  }
-
-  async fetchSuiData(): Promise<number> {
-    const start = performance.now();
-    try {
-      const client = new SuiClient({ url: getFullnodeUrl('mainnet') });
-      const [checkpoint, rgp] = await Promise.all([
-        client.getLatestCheckpointSequenceNumber(),
-        client.getReferenceGasPrice()
-      ]);
-
-      const latency = Math.round(performance.now() - start);
-      this.suiData.set({
-        id: 'move',
-        name: 'Sui Mainnet',
-        status: 'connected',
-        blockHeight: checkpoint.toString(),
-        gasPrice: `${(Number(rgp) / 1000).toFixed(0)} MIST`,
-        tps: 310 + (Math.random() * 20),
-        latency,
-        lastUpdated: Date.now()
-      });
-      return latency;
-    } catch (_error) {
-      this.handleError('move', _error);
-      return 0;
-    }
-  }
-
-  async fetchCardanoData(): Promise<number> {
-    const start = performance.now();
-    try {
-      const res = await fetch('https://api.koios.rest/api/v1/tip');
-      // FIX: Replaced any with KoiosTipResponse
-      const data = await res.json() as KoiosTipResponse[];
-      
-      const latency = Math.round(performance.now() - start);
-      this.cardanoData.set({
-        id: 'plutus',
-        name: 'Cardano',
-        status: 'connected',
-        blockHeight: data[0].block_no.toString(),
-        gasPrice: '0.17 ADA',
-        tps: 1.5 + Math.random(),
-        latency,
-        lastUpdated: Date.now()
-      });
-      return latency;
-    } catch (_error) {
-      this.handleError('plutus', _error);
-      return 0;
-    }
-  }
-
-  // --- LOGIC HELPERS ---
 
   public refreshAll(): void {
     if (!this.isBrowser) return;
-    
-    this.aiService.addLog('AI-Sentinel', 'Initiating 60s infrastructure deep scan...', 'info');
+    this.aiService.addLog('AOX-Sync', 'Ağlar güncelleniyor (AOXCHAIN local-first)...', 'info');
 
     Promise.all([
-      this.fetchXLayerData(),
-      this.fetchSuiData(),
-      this.fetchCardanoData()
-    ]).then((latencies) => {
-      const avgLat = Math.round(latencies.reduce((a, b) => a + b, 0) / 3);
-      this.aiService.addLog('Sync-Master', `Deep scan complete. Avg Neural Latency: ${avgLat}ms`, 'info');
-    }).catch((_err: unknown) => {
-      this.aiService.addLog('System-Core', 'Sovereign sync cycle interrupted.', 'critical');
-    });
+      this.fetchAoxchainData(),
+      this.fetchNetworkData('evm'),
+      this.fetchNetworkData('solana'),
+      this.fetchNetworkData('btc')
+    ]).catch(() => this.aiService.addLog('System-Core', 'Sovereign sync cycle interrupted.', 'critical'));
   }
 
-  // FIX: Replaced 'any' with 'unknown' for safer error handling
-  private handleError(id: NetworkId, _error: unknown): void {
-    const target = id === 'evm' ? this.xLayerData : id === 'move' ? this.suiData : this.cardanoData;
-    target.update(prev => ({ ...prev, status: 'error', tps: 0 }));
+  public async refreshGovernanceAndRelay(): Promise<void> {
+    await Promise.all([this.fetchGovernanceProposals(), this.fetchRelayDeployments()]);
+  }
+
+  public async fetchGovernanceProposals(): Promise<void> {
+    try {
+      const response = await fetch(`${this.backendBase}/aoxchain/governance/proposals`);
+      const payload = await response.json() as { proposals: GovernanceProposal[] };
+      this.proposals.set(payload.proposals || []);
+    } catch {
+      this.proposals.set([]);
+    }
+  }
+
+  public async fetchRelayDeployments(): Promise<void> {
+    try {
+      const response = await fetch(`${this.backendBase}/aoxchain/deployments/relay`);
+      if (!response.ok) return;
+      const payload = await response.json() as { deployments: RelayDeployment[] };
+      this.relayDeployments.set(payload.deployments || []);
+    } catch {
+      this.relayDeployments.set([]);
+    }
+  }
+
+  public async queueRelayDeployment(input: RelayDeploymentPayload): Promise<boolean> {
+    try {
+      const response = await fetch(`${this.backendBase}/aoxchain/deployments/relay`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(input)
+      });
+      if (!response.ok) return false;
+      await this.fetchRelayDeployments();
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  public networkColor(id: string): string {
+    const map: Record<string, string> = { evm: 'var(--color-xlayer)', aoxchain: '#10b981', solana: '#14f195', btc: '#f7931a' };
+    return map[id] ?? 'var(--color-sui)';
+  }
+
+  public networkIcon(id: string): string {
+    const map: Record<string, string> = { evm: 'fa-bolt-lightning', aoxchain: 'fa-link', solana: 'fa-s', btc: 'fa-bitcoin-sign' };
+    return map[id] ?? 'fa-circle-nodes';
+  }
+
+  private async fetchAoxchainData(): Promise<void> {
+    const start = performance.now();
+    try {
+      const statusResponse = await fetch(`${this.backendBase}/aoxchain/status?rpc=http://localhost:2626`);
+      const status = await statusResponse.json() as AoxchainStatusResponse;
+
+      this.updateNetwork('aoxchain', {
+        status: status.ok ? 'connected' : 'error',
+        blockHeight: status.blockNumber?.toString() ?? 'N/A',
+        gasPrice: 'AOXC gas',
+        tps: 45 + Math.random() * 15,
+        latency: status.latencyMs ?? Math.round(performance.now() - start),
+      });
+    } catch {
+      this.handleError('aoxchain');
+    }
+  }
+
+  private async fetchNetworkData(id: string): Promise<void> {
+    const start = performance.now();
+    try {
+      let blockHeight = '...';
+      let gasPrice = 'N/A';
+      let tps = 0;
+
+      if (id === 'evm') {
+        const response = await fetch('https://rpc.ankr.com/eth', {
+          method: 'POST', headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_blockNumber', params: [] })
+        });
+        const payload = await response.json() as { result?: string };
+        blockHeight = payload.result ? parseInt(payload.result, 16).toString() : 'N/A';
+        gasPrice = 'EVM gas';
+        tps = 12 + Math.random() * 10;
+      }
+
+      if (id === 'solana') {
+        const response = await fetch('https://api.mainnet-beta.solana.com', {
+          method: 'POST', headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'getSlot' })
+        });
+        const payload = await response.json() as { result?: number };
+        blockHeight = payload.result?.toString() ?? 'N/A';
+        gasPrice = 'Priority fee';
+        tps = 2200 + Math.random() * 150;
+      }
+
+      if (id === 'btc') {
+        const response = await fetch('https://blockstream.info/api/blocks/tip/height');
+        blockHeight = await response.text();
+        gasPrice = 'sat/vB';
+        tps = 7 + Math.random() * 2;
+      }
+
+      this.updateNetwork(id, {
+        status: 'connected',
+        blockHeight,
+        gasPrice,
+        tps,
+        latency: Math.round(performance.now() - start),
+      });
+    } catch {
+      this.handleError(id);
+    }
+  }
+
+  private updateNetwork(id: string, patch: Partial<NetworkData>): void {
+    this.networksData.update((items) => items.map((item) => item.id === id ? ({ ...item, ...patch, lastUpdated: Date.now() }) : item));
+  }
+
+  private handleError(id: string): void {
+    this.updateNetwork(id, { status: 'error', tps: 0, latency: 0 });
     this.aiService.addLog('System-Node', `Critical: ${id.toUpperCase()} RPC unreachable.`, 'critical');
   }
 
-  private getDefaultData(id: NetworkId, name: string): NetworkData {
+  private getDefaultData(id: string, name: string): NetworkData {
     return { id, name, status: 'loading', blockHeight: '...', gasPrice: '...', tps: 0, latency: 0, lastUpdated: 0 };
   }
 
