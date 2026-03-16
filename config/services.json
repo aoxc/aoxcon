@@ -4,19 +4,25 @@
       "name": "evm",
       "type": "http",
       "baseUrl": "http://localhost:8001",
-      "description": "EVM deposundan taşınacak backend + cli adaptörleri"
+      "description": "EVM integration backend + CLI adapters"
+    },
+    {
+      "name": "aoxchain",
+      "type": "http",
+      "baseUrl": "http://localhost:8100",
+      "description": "New AOXCHAIN service gateway integration"
     },
     {
       "name": "solana",
       "type": "http",
       "baseUrl": "http://localhost:8002",
-      "description": "Diğer depo için placeholder"
+      "description": "Solana adapter placeholder for external repo"
     },
     {
       "name": "btc",
       "type": "http",
       "baseUrl": "http://localhost:8003",
-      "description": "Diğer depo için placeholder"
+      "description": "Bitcoin adapter placeholder for external repo"
     }
   ]
 }
