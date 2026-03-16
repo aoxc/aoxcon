@@ -39,7 +39,7 @@ export class HeaderComponent {
     return (wallet.connected && wallet.type) ? wallet.type.charAt(0).toUpperCase() : 'N';
   });
 
-  public readonly networks: string[] = ['All Networks', 'EVM Engine', 'Move Module', 'Plutus Ledger'];
+  public readonly networks: string[] = ['All Networks', 'EVM', 'AOXCHAIN', 'Solana', 'Bitcoin'];
 
   // --- INTERACTIVE METHODS ---
 
