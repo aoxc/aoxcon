@@ -4,6 +4,7 @@ import { App } from '../../app';
 import { WalletService, WalletType } from '../../wallet.service';
 import { AIService } from '../../ai.service';
 import { LanguageService, LanguageCode } from '../../language.service';
+import { HeaderWalletComponent } from './header-wallet/header-wallet';
 
 /**
  * SOVEREIGN HEADER ENGINE
@@ -13,7 +14,7 @@ import { LanguageService, LanguageCode } from '../../language.service';
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, HeaderWalletComponent],
   templateUrl: './header.html',
   styleUrl: './header.css',
   // FIX: Satisfies @angular-eslint/prefer-on-push-component-change-detection

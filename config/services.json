@@ -1,6 +1,13 @@
 {
   "services": [
     {
+      "name": "aoxchain",
+      "type": "rpc",
+      "baseUrl": "http://localhost:2626",
+      "fallbackUrl": "https://aoxcore.com",
+      "description": "Primary AOXCHAIN RPC (local-first) with aoxcore.com fallback"
+    },
+    {
       "name": "evm",
       "type": "http",
       "baseUrl": "http://localhost:8001",
