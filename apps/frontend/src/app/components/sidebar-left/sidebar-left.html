@@ -16,12 +16,9 @@
   </div>
 
   <nav class="nav-engine custom-scrollbar">
-    
     <div class="nav-group">
       <p class="group-title">{{ langService.t('overview') }}</p>
-      <button (click)="setTab('overview')" 
-              [class.active-node]="app.activeTab() === 'overview'" 
-              class="nav-node group">
+      <button (click)="setTab('overview')" [class.active-node]="app.activeTab() === 'overview'" class="nav-node group">
         <div class="node-icon"><i class="fa-solid fa-layer-group"></i></div>
         <span class="node-label">{{ langService.t('overview') }}</span>
       </button>
@@ -29,26 +26,18 @@
 
     <div class="nav-group">
       <p class="group-title">Sovereign Layers</p>
-      <button (click)="setNetwork('evm')" 
-              [class.active-node]="app.activeTab() === 'networks' && app.activeNetwork() === 'evm'" 
-              class="nav-node group">
-        <div class="node-icon text-[var(--color-xlayer)]"><i class="fa-solid fa-bolt-lightning"></i></div>
-        <span class="node-label">EVM Engine</span>
-      </button>
-
-      <button (click)="setNetwork('move')" 
-              [class.active-node]="app.activeTab() === 'networks' && app.activeNetwork() === 'move'" 
-              class="nav-node group">
-        <div class="node-icon text-[var(--color-sui)]"><i class="fa-solid fa-droplet"></i></div>
-        <span class="node-label">Move Module</span>
-      </button>
-
-      <button (click)="setNetwork('plutus')" 
-              [class.active-node]="app.activeTab() === 'networks' && app.activeNetwork() === 'plutus'" 
-              class="nav-node group">
-        <div class="node-icon text-[var(--color-cardano)]"><i class="fa-solid fa-microchip"></i></div>
-        <span class="node-label">Plutus Ledger</span>
-      </button>
+      @for (net of networkService.networks(); track net.id) {
+        <button
+          (click)="setNetwork(net.id)"
+          [class.active-node]="app.activeTab() === 'networks' && app.activeNetwork() === net.id"
+          class="nav-node group"
+        >
+          <div class="node-icon" [style.color]="networkService.networkColor(net.id)">
+            <i class="fa-solid" [class]="'fa-solid ' + networkService.networkIcon(net.id)"></i>
+          </div>
+          <span class="node-label">{{ net.name }}</span>
+        </button>
+      }
     </div>
 
     <div class="nav-group">
@@ -62,7 +51,6 @@
         <span class="node-label">{{ langService.t('dao') }}</span>
       </button>
     </div>
-
   </nav>
 
   <div class="p-6 mt-auto">
