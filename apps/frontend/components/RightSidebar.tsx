@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { fetchOnChainSnapshot } from '@/lib/onchain';
 import { cn } from '@/lib/utils';
+import { getMarketSymbol } from '@/lib/network';
 import { useDemo } from './DemoContext';
 
 interface RightSidebarProps {
@@ -34,6 +35,27 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
+      const data = await fetchOnChainSnapshot(state.network);
+      setSnapshot(data);
+
+      let ticker: any;
+      const tickerRes = await fetch(`/api/ticker?network=${state.network}`, { cache: 'no-store' });
+      if (tickerRes.ok) {
+        ticker = await tickerRes.json();
+      } else {
+        const symbol = getMarketSymbol(state.network);
+        const remoteTickerRes = await fetch(
+          `${state.networkProfile.apiBaseUrl}/api/v1/market/ticker?symbol=${symbol}`,
+          { cache: 'no-store' },
+        );
+        if (remoteTickerRes.ok) {
+          ticker = await remoteTickerRes.json();
+        }
+      }
+
+      if (ticker) {
+        const livePrice = Number(ticker.lastPrice || ticker.price || 0);
+        const liveChange = Number(ticker.priceChangePercent || ticker.change24h || 0);
       const [data, tickerRes] = await Promise.all([
         fetchOnChainSnapshot(state.network),
         fetch(`/api/ticker?network=${state.network}`, { cache: 'no-store' }),
@@ -53,6 +75,7 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
     } finally {
       setLoading(false);
     }
+  }, [state.network, state.networkProfile.apiBaseUrl]);
   }, [state.network]);
 
   useEffect(() => {
