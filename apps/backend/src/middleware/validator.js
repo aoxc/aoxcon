@@ -21,7 +21,6 @@ function validateAnalyzePayload(req, res, next) {
   return next();
 }
 
-
 const relayDeploymentSchema = z.object({
   contractName: z.string().min(2).max(120),
   bytecode: z.string().min(10).max(200000),

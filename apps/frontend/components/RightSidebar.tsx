@@ -45,7 +45,7 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
       } else {
         const symbol = getMarketSymbol(state.network);
         const remoteTickerRes = await fetch(
-          `${state.networkProfile.apiBaseUrl}/api/v1/market/ticker?symbol=${symbol}`,
+          `${state.networkProfile.apiBaseUrl}/market/ticker?symbol=${symbol}`,
           { cache: 'no-store' },
         );
         if (remoteTickerRes.ok) {

@@ -49,25 +49,26 @@ async function jsonRpcCall(url, method, params = []) {
 
 async function probeAoxchainStatus(requestId, preferredRpc) {
   const log = withRequestContext(requestId || 'n/a');
-  const endpoints = preferredRpc ? [preferredRpc, ...DEFAULT_RPC_ENDPOINTS] : DEFAULT_RPC_ENDPOINTS;
+  const endpoints = preferredRpc
+    ? [preferredRpc, ...DEFAULT_RPC_ENDPOINTS]
+    : DEFAULT_RPC_ENDPOINTS;
 
   let lastError = null;
 
   for (const endpoint of endpoints) {
     const start = Date.now();
     try {
-      const [chainId, blockNumber] = await Promise.all([
-        jsonRpcCall(endpoint, 'eth_chainId'),
-        jsonRpcCall(endpoint, 'eth_blockNumber'),
-      ]);
+      const chainId = await jsonRpcCall(endpoint, 'eth_chainId');
 
       return {
         ok: true,
         rpc: endpoint,
         chainId,
-        blockNumber: parseInt(blockNumber, 16),
+        blockNumber: null,
         latencyMs: Date.now() - start,
-        relayQueueDepth: relayDeployments.filter((item) => item.status !== 'done').length,
+        relayQueueDepth: relayDeployments.filter(
+          (item) => item.status !== 'done'
+        ).length,
       };
     } catch (error) {
       lastError = error;
@@ -86,7 +87,8 @@ async function probeAoxchainStatus(requestId, preferredRpc) {
     chainId: null,
     blockNumber: null,
     latencyMs: null,
-    relayQueueDepth: relayDeployments.filter((item) => item.status !== 'done').length,
+    relayQueueDepth: relayDeployments.filter((item) => item.status !== 'done')
+      .length,
     error: lastError ? lastError.message : 'RPC_UNREACHABLE',
   };
 }
@@ -94,7 +96,9 @@ async function probeAoxchainStatus(requestId, preferredRpc) {
 function listGovernanceProposals() {
   return governanceProposals.map((item) => ({
     ...item,
-    participation: Number((((item.yes + item.no) / item.quorum) * 100).toFixed(2)),
+    participation: Number(
+      (((item.yes + item.no) / item.quorum) * 100).toFixed(2)
+    ),
   }));
 }
 
@@ -109,7 +113,9 @@ function queueRelayDeployment(input) {
     createdAt: Date.now(),
     security: {
       staticScan: 'passed',
-      reentrancyGuard: input.bytecode.toLowerCase().includes('reentr') ? 'present' : 'unknown',
+      reentrancyGuard: input.bytecode.toLowerCase().includes('reentr')
+        ? 'present'
+        : 'unknown',
       relayPolicy: 'sequential',
     },
     steps: input.targetNetworks.map((network, index) => ({

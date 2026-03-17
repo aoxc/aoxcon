@@ -1,10 +1,8 @@
 import { z } from 'zod';
-import { AOXC_OKX_EXPLORER_URL, AOXC_OKX_TOKEN_URL, AOXC_TOKEN_ADDRESS, getNetworkProfile, type Network } from '@/lib/network';
+import { AOXC_OKX_EXPLORER_URL, AOXC_OKX_TOKEN_URL, AOXC_TOKEN_ADDRESS, getMarketSymbol, getNetworkProfile, type Network } from '@/lib/network';
 
 const intervalSchema = z.enum(['1m', '5m', '15m', '1h', '4h', '1d']);
-const networkSchema = z.enum(['main']);
-
-const marketSymbol = process.env.AOX_MARKET_SYMBOL || process.env.NEXT_PUBLIC_AOX_MARKET_SYMBOL || 'AOXCUSDT';
+const networkSchema = z.enum(['main', 'xlayer', 'cardano', 'sui']);
 
 function withTimeout(ms: number): AbortSignal {
   return AbortSignal.timeout(ms);
@@ -15,8 +13,8 @@ export function parseNetworkQuery(network: string | null): Network {
   return safe.success ? safe.data : 'main';
 }
 
-function resolveApiBase() {
-  return getNetworkProfile('main').apiBaseUrl;
+function resolveApiBase(network: Network) {
+  return getNetworkProfile(network).apiBaseUrl;
 }
 
 export function normalizeTicker(payload: any, network: Network) {
@@ -26,7 +24,7 @@ export function normalizeTicker(payload: any, network: Network) {
   const quoteVolume = Number(payload?.quoteVolume ?? payload?.volume ?? 0);
 
   return {
-    symbol: payload?.symbol || marketSymbol,
+    symbol: payload?.symbol || getMarketSymbol(network),
     network,
     tokenAddress: AOXC_TOKEN_ADDRESS,
     lastPrice: Number.isFinite(lastPrice) ? lastPrice : 0,
@@ -41,8 +39,9 @@ export function normalizeTicker(payload: any, network: Network) {
 }
 
 export async function fetchAoxTicker(_network: Network) {
-  const baseUrl = resolveApiBase();
-  return fetch(`${baseUrl}/api/v1/market/ticker?symbol=${marketSymbol}`, {
+  const baseUrl = resolveApiBase(_network);
+  const symbol = getMarketSymbol(_network);
+  return fetch(`${baseUrl}/market/ticker?symbol=${symbol}`, {
     headers: { Accept: 'application/json' },
     signal: withTimeout(8000),
     cache: 'no-store',
@@ -61,8 +60,9 @@ export function parseKlineQuery(interval: string | null, limit: string | null) {
 }
 
 export async function fetchAoxKlines(_network: Network, interval: string, limit: number) {
-  const baseUrl = resolveApiBase();
-  return fetch(`${baseUrl}/api/v1/market/klines?symbol=${marketSymbol}&interval=${interval}&limit=${limit}`, {
+  const baseUrl = resolveApiBase(_network);
+  const symbol = getMarketSymbol(_network);
+  return fetch(`${baseUrl}/market/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`, {
     headers: { Accept: 'application/json' },
     signal: withTimeout(8000),
     cache: 'no-store',
@@ -79,7 +79,7 @@ export function normalizeKlines(payload: any): any[] {
 export function getDemoTicker(network: Network) {
   return normalizeTicker(
     {
-      symbol: marketSymbol,
+      symbol: getMarketSymbol(network),
       lastPrice: 0.0614,
       priceChangePercent: 0.8,
       quoteVolume: 12450000,
