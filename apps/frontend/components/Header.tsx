@@ -97,6 +97,10 @@ export default function Header({ onMenuToggle }: HeaderProps) {
               <div
                 className={cn(
                   'w-1.5 h-1.5 rounded-full',
+                  state.network === 'aoxchain' ? 'bg-aox-green' : state.network === 'xlayer' ? 'bg-yellow-500' : 'bg-purple-500',
+                )}
+              />
+              <span className="hidden sm:inline">{state.networkProfile.label}</span>
                   state.network === 'mainnet' ? 'bg-aox-green' : state.network === 'testnet' ? 'bg-yellow-500' : 'bg-purple-500',
                 )}
               />
