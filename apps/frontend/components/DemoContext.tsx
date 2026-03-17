@@ -25,6 +25,11 @@ const DEFAULT_NETWORK: Network = 'aoxchain';
 const NETWORK_BALANCES: Record<Network, number> = {
   aoxchain: 1284520,
   xlayer: 1284520,
+const DEFAULT_NETWORK: Network = 'mainnet';
+
+const NETWORK_BALANCES: Record<Network, number> = {
+  mainnet: 1284520,
+  testnet: 500000,
   demo: 1000000,
 };
 

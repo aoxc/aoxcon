@@ -56,6 +56,16 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
       if (ticker) {
         const livePrice = Number(ticker.lastPrice || ticker.price || 0);
         const liveChange = Number(ticker.priceChangePercent || ticker.change24h || 0);
+      const [data, tickerRes] = await Promise.all([
+        fetchOnChainSnapshot(state.network),
+        fetch(`/api/ticker?network=${state.network}`, { cache: 'no-store' }),
+      ]);
+
+      setSnapshot(data);
+      if (tickerRes.ok) {
+        const ticker = await tickerRes.json();
+        const livePrice = Number(ticker.lastPrice || 0);
+        const liveChange = Number(ticker.priceChangePercent || 0);
         setTokenPrice(livePrice.toFixed(6));
         setPriceChange(`${liveChange >= 0 ? '+' : ''}${liveChange.toFixed(2)}%`);
       }
@@ -66,6 +76,7 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
       setLoading(false);
     }
   }, [state.network, state.networkProfile.apiBaseUrl]);
+  }, [state.network]);
 
   useEffect(() => {
     loadData();

@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Globe, Zap, Shield, Cpu, Activity, ExternalLink, Database, Wifi } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AOXC_OKX_EXPLORER_URL, AOXC_OKX_TOKEN_URL, getMarketSymbol } from '@/lib/network';
+import { AOXC_OKX_EXPLORER_URL, AOXC_OKX_TOKEN_URL } from '@/lib/network';
 import { useDemo } from './DemoContext';
 import { 
   AreaChart, 
@@ -70,6 +71,9 @@ export default function Nexus() {
           if (!remoteTickerRes.ok) throw new Error('Failed to fetch ticker');
           tickerData = await remoteTickerRes.json();
         }
+        const tickerRes = await fetch(`/api/ticker?network=${state.network}`);
+        if (!tickerRes.ok) throw new Error('Failed to fetch ticker');
+        const tickerData = await tickerRes.json();
 
         const price = Number(tickerData.lastPrice);
         const change = Number(tickerData.priceChangePercent);
@@ -105,6 +109,9 @@ export default function Nexus() {
           if (!remoteKlinesRes.ok) throw new Error('Failed to fetch chart');
           klinesData = await remoteKlinesRes.json();
         }
+        const klinesRes = await fetch(`/api/klines?network=${state.network}&interval=${interval}&limit=${limit}`);
+        if (!klinesRes.ok) throw new Error('Failed to fetch chart');
+        const klinesData = await klinesRes.json();
         const series = Array.isArray(klinesData) ? klinesData : [];
 
         const formattedChart = series.map((k: any) => {
@@ -144,6 +151,7 @@ export default function Nexus() {
     const interval = setInterval(fetchRealData, 15000); // Update every 15s
     return () => clearInterval(interval);
   }, [timeframe, state.network, state.networkProfile.apiBaseUrl]);
+  }, [timeframe, state.network]);
 
   const slides = [
     {
