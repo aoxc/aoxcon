@@ -7,6 +7,10 @@ const networkSchema = z.enum(['aoxchain', 'xlayer', 'demo']);
 const defaultMarketSymbol = process.env.AOX_MARKET_SYMBOL || 'AOXCUSDT';
 const xLayerMarketSymbol = process.env.AOX_XLAYER_MARKET_SYMBOL || defaultMarketSymbol;
 
+const intervalSchema = z.enum(['1m', '5m', '15m', '1h', '4h', '1d']);
+
+const baseUrl = process.env.AOX_API_BASE_URL || 'https://api.aoxcore.com';
+
 function withTimeout(ms: number): AbortSignal {
   return AbortSignal.timeout(ms);
 }
@@ -52,6 +56,11 @@ export async function fetchAoxTicker(network: Network) {
 
   return fetch(`${baseUrl}/api/v1/market/ticker?symbol=${symbol}`, {
     headers: { Accept: 'application/json' },
+export async function fetchAoxTicker() {
+  return fetch(`${baseUrl}/api/v1/market/ticker?symbol=AOXCUSDT`, {
+    headers: {
+      Accept: 'application/json',
+    },
     signal: withTimeout(8000),
     cache: 'no-store',
   });
@@ -74,6 +83,11 @@ export async function fetchAoxKlines(network: Network, interval: string, limit: 
 
   return fetch(`${baseUrl}/api/v1/market/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`, {
     headers: { Accept: 'application/json' },
+export async function fetchAoxKlines(interval: string, limit: number) {
+  return fetch(`${baseUrl}/api/v1/market/klines?symbol=AOXCUSDT&interval=${interval}&limit=${limit}`, {
+    headers: {
+      Accept: 'application/json',
+    },
     signal: withTimeout(8000),
     cache: 'no-store',
   });
@@ -98,6 +112,13 @@ export function getDemoTicker(network: Network) {
     network,
   );
 }
+export const demoTicker = {
+  symbol: 'AOXCUSDT',
+  lastPrice: '0.0614',
+  priceChangePercent: '0.80',
+  volume: '12450000',
+  source: 'demo-fallback',
+};
 
 export const demoKlines = [
   [Date.now() - 3600000, '0.0609', '0.0615', '0.0606', '0.0614', '152350'],

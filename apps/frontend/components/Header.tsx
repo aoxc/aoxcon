@@ -101,6 +101,10 @@ export default function Header({ onMenuToggle }: HeaderProps) {
                 )}
               />
               <span className="hidden sm:inline">{state.networkProfile.label}</span>
+                  state.network === 'mainnet' ? 'bg-aox-green' : state.network === 'testnet' ? 'bg-yellow-500' : 'bg-purple-500',
+                )}
+              />
+              <span className="capitalize hidden sm:inline">{state.network}</span>
               <ChevronDown className="w-3 h-3 text-white/30" />
             </button>
             <AnimatePresence>
