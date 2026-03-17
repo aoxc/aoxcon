@@ -26,14 +26,25 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
   const [snapshot, setSnapshot] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
-  const [tokenPrice, setTokenPrice] = useState('0.003412');
-  const [priceChange, setPriceChange] = useState('+5.24%');
+  const [tokenPrice, setTokenPrice] = useState('0.000000');
+  const [priceChange, setPriceChange] = useState('0.00%');
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const data = await fetchOnChainSnapshot();
+      const [data, tickerRes] = await Promise.all([
+        fetchOnChainSnapshot(),
+        fetch('/api/ticker', { cache: 'no-store' }),
+      ]);
+
       setSnapshot(data);
+      if (tickerRes.ok) {
+        const ticker = await tickerRes.json();
+        const livePrice = Number(ticker.lastPrice || 0);
+        const liveChange = Number(ticker.priceChangePercent || 0);
+        setTokenPrice(livePrice.toFixed(6));
+        setPriceChange(`${liveChange >= 0 ? '+' : ''}${liveChange.toFixed(2)}%`);
+      }
       setLastUpdate(new Date());
     } catch (error) {
       console.error(error);
@@ -46,18 +57,8 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
     loadData();
     const interval = setInterval(loadData, 60000); // 1 minute
     
-    // Simulate price updates
-    const priceInterval = setInterval(() => {
-      const basePrice = 0.003412;
-      const fluctuation = (Math.random() - 0.5) * 0.00005;
-      const newPrice = (basePrice + fluctuation).toFixed(6);
-      setTokenPrice(newPrice);
-      setPriceChange(fluctuation >= 0 ? '+5.24%' : '+5.23%');
-    }, 15000);
-
     return () => {
       clearInterval(interval);
-      clearInterval(priceInterval);
     };
   }, []);
 
@@ -131,7 +132,7 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
                 </AnimatePresence>
                 <span className="text-xs font-bold text-aox-green">{priceChange}</span>
               </div>
-              <span className="text-[10px] text-white/40 uppercase tracking-tighter">Real-time / AOXCHAIN</span>
+              <span className="text-[10px] text-white/40 uppercase tracking-tighter">Live / X Layer AOXC</span>
             </div>
           </div>
         </div>

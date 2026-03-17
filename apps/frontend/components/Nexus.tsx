@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Globe, Zap, Shield, Cpu, Activity, TrendingUp, ArrowUpRight, ExternalLink, Copy, Info, Database, Wifi } from 'lucide-react';
+import { Globe, Zap, Shield, Cpu, Activity, ExternalLink, Database, Wifi } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { AOXC_OKX_EXPLORER_URL, AOXC_OKX_TOKEN_URL } from '@/lib/network';
 import { 
   AreaChart, 
   Area, 
@@ -14,36 +15,19 @@ import {
   ResponsiveContainer 
 } from 'recharts';
 
-const chartData = [
-  { name: '00:00', price: 0.003120 },
-  { name: '04:00', price: 0.003250 },
-  { name: '08:00', price: 0.003380 },
-  { name: '12:00', price: 0.003412 },
-  { name: '16:00', price: 0.003390 },
-  { name: '20:00', price: 0.003450 },
-  { name: '23:59', price: 0.003412 },
-];
-
-const networkStats = [
-  { label: 'Total Nodes', value: '1,284', icon: Globe, color: 'text-blue-400', glow: 'glow-blue' },
-  { label: 'Active Synapses', value: '42', icon: Cpu, color: 'text-ai-green', glow: 'glow-green' },
-  { label: 'Network TPS', value: '14.2k', icon: Activity, color: 'text-orange-400', glow: 'border-orange-500/20' },
-  { label: 'Security Score', value: '99.8%', icon: Shield, color: 'text-purple-400', glow: 'border-purple-500/20' },
-];
-
 export default function Nexus() {
   const [pings, setPings] = useState<{top: string, left: string}[]>([]);
   const [chartData, setChartData] = useState<{name: string, price: number}[]>([]);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [timeframe, setTimeframe] = useState('1D');
   const [tokenData, setTokenData] = useState({
-    price: '0.0614',
-    change: '+4.16%',
-    marketCap: '$6.1B',
-    volume: '$1.9',
-    holders: '162',
-    circulating: '100B AOXC',
-    lastUpdate: 'Live'
+    price: '0.0000',
+    change: '0.00%',
+    marketCap: 'Live',
+    volume: 'Live',
+    holders: 'Explorer',
+    circulating: 'On-chain',
+    lastUpdate: 'Loading'
   });
   const [isLoading, setIsLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
@@ -75,20 +59,18 @@ export default function Nexus() {
         if (!tickerRes.ok) throw new Error('Failed to fetch ticker');
         const tickerData = await tickerRes.json();
 
-        const price = parseFloat(tickerData.lastPrice);
-        const change = parseFloat(tickerData.priceChangePercent);
-        const volume = parseFloat(tickerData.quoteVolume);
-        
-        // Scale down ETH price to look like a smaller token (e.g., divide by 1000000)
-        const scaledPrice = price / 1000000;
-        const marketCap = scaledPrice * 3600000000; // 3.6B supply
+        const price = Number(tickerData.lastPrice);
+        const change = Number(tickerData.priceChangePercent);
+        const volume = Number(tickerData.quoteVolume);
 
         setTokenData(prev => ({
           ...prev,
-          price: scaledPrice.toFixed(6),
+          price: price.toFixed(6),
           change: `${change >= 0 ? '+' : ''}${change.toFixed(2)}%`,
-          marketCap: `$${(marketCap / 1000000).toFixed(1)}M`,
-          volume: `$${(volume / 1000000).toFixed(1)}M`,
+          marketCap: 'Live via liquidity feed',
+          volume: `$${(volume / 1000000).toFixed(2)}M`,
+          holders: 'OKX Explorer',
+          circulating: 'Read from on-chain',
           lastUpdate: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
         }));
 
@@ -101,8 +83,9 @@ export default function Nexus() {
         const klinesRes = await fetch(`/api/klines?interval=${interval}&limit=${limit}`);
         if (!klinesRes.ok) throw new Error('Failed to fetch chart');
         const klinesData = await klinesRes.json();
+        const series = Array.isArray(klinesData) ? klinesData : [];
 
-        const formattedChart = klinesData.map((k: any) => {
+        const formattedChart = series.map((k: any) => {
           const date = new Date(k[0]);
           let name = '';
           if (timeframe === '1H') name = `${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
@@ -111,7 +94,7 @@ export default function Nexus() {
 
           return {
             name,
-            price: parseFloat(k[4]) / 1000000 // Close price scaled
+            price: Number.parseFloat(k[4])
           };
         });
 
@@ -124,10 +107,10 @@ export default function Nexus() {
         // Fallback to 0 / No Data if API fails
         setTokenData(prev => ({
           ...prev,
-          price: '0.000000',
+          price: prev.price,
           change: '0.00%',
-          marketCap: 'No Data',
-          volume: 'No Data',
+          marketCap: 'Feed unavailable',
+          volume: 'Feed unavailable',
           lastUpdate: 'Error'
         }));
       } finally {
@@ -150,13 +133,13 @@ export default function Nexus() {
     {
       title: "Buy AOXC",
       description: "Secure your position in the future of sovereign intelligence. Trade on X Layer with high liquidity.",
-      cta: { label: "Buy on OKX Web3", link: "https://web3.okx.com/tr/token/x-layer/0xeb9580c3946bb47d73aae1d4f7a94148b554b2f4" },
+      cta: { label: "Buy on OKX Web3", link: AOXC_OKX_TOKEN_URL },
       bg: "bg-gradient-to-r from-aox-green/20 to-transparent"
     },
     {
       title: "Sync Status",
       description: "Real-time synchronization with X Layer mainnet. Sovereign intelligence nodes are active globally.",
-      cta: { label: "View Network", link: "#" },
+      cta: { label: "Open OKX Explorer", link: AOXC_OKX_EXPLORER_URL },
       bg: "bg-gradient-to-r from-purple-500/20 to-transparent"
     }
   ];
