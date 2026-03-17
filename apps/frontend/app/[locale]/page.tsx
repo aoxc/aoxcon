@@ -76,7 +76,7 @@ export default function Dashboard() {
             onMenuToggle={() => setIsSidebarOpen(!isSidebarOpen)}
           />
 
-          <div className="flex-1 w-full pt-20 relative flex flex-col overflow-x-hidden p-4 md:p-8">
+          <div className="flex-1 w-full relative flex flex-col overflow-x-hidden p-4 md:p-8">
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeTab}
