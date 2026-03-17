@@ -2,8 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Globe, Zap, Shield, Cpu, Activity, TrendingUp, ArrowUpRight, ExternalLink, Copy, Info, Database, Wifi } from 'lucide-react';
+import { Globe, Zap, Shield, Cpu, Activity, ExternalLink, Database, Wifi } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { AOXC_OKX_EXPLORER_URL, AOXC_OKX_TOKEN_URL, getMarketSymbol } from '@/lib/network';
+import { useDemo } from './DemoContext';
 import { 
   AreaChart, 
   Area, 
@@ -14,36 +16,20 @@ import {
   ResponsiveContainer 
 } from 'recharts';
 
-const chartData = [
-  { name: '00:00', price: 0.003120 },
-  { name: '04:00', price: 0.003250 },
-  { name: '08:00', price: 0.003380 },
-  { name: '12:00', price: 0.003412 },
-  { name: '16:00', price: 0.003390 },
-  { name: '20:00', price: 0.003450 },
-  { name: '23:59', price: 0.003412 },
-];
-
-const networkStats = [
-  { label: 'Total Nodes', value: '1,284', icon: Globe, color: 'text-blue-400', glow: 'glow-blue' },
-  { label: 'Active Synapses', value: '42', icon: Cpu, color: 'text-ai-green', glow: 'glow-green' },
-  { label: 'Network TPS', value: '14.2k', icon: Activity, color: 'text-orange-400', glow: 'border-orange-500/20' },
-  { label: 'Security Score', value: '99.8%', icon: Shield, color: 'text-purple-400', glow: 'border-purple-500/20' },
-];
-
 export default function Nexus() {
+  const { state } = useDemo();
   const [pings, setPings] = useState<{top: string, left: string}[]>([]);
   const [chartData, setChartData] = useState<{name: string, price: number}[]>([]);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [timeframe, setTimeframe] = useState('1D');
   const [tokenData, setTokenData] = useState({
-    price: '0.0614',
-    change: '+4.16%',
-    marketCap: '$6.1B',
-    volume: '$1.9',
-    holders: '162',
-    circulating: '100B AOXC',
-    lastUpdate: 'Live'
+    price: '0.0000',
+    change: '0.00%',
+    marketCap: 'Live',
+    volume: 'Live',
+    holders: 'Explorer',
+    circulating: 'On-chain',
+    lastUpdate: 'Loading'
   });
   const [isLoading, setIsLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
@@ -71,24 +57,32 @@ export default function Nexus() {
       try {
         setIsLoading(true);
         // Fetch 24h Ticker Data from local proxy
-        const tickerRes = await fetch('/api/ticker');
-        if (!tickerRes.ok) throw new Error('Failed to fetch ticker');
-        const tickerData = await tickerRes.json();
+        let tickerData: any;
+        const tickerRes = await fetch(`/api/ticker?network=${state.network}`);
+        if (tickerRes.ok) {
+          tickerData = await tickerRes.json();
+        } else {
+          const symbol = getMarketSymbol(state.network);
+          const remoteTickerRes = await fetch(
+            `${state.networkProfile.apiBaseUrl}/api/v1/market/ticker?symbol=${symbol}`,
+            { cache: 'no-store' },
+          );
+          if (!remoteTickerRes.ok) throw new Error('Failed to fetch ticker');
+          tickerData = await remoteTickerRes.json();
+        }
 
-        const price = parseFloat(tickerData.lastPrice);
-        const change = parseFloat(tickerData.priceChangePercent);
-        const volume = parseFloat(tickerData.quoteVolume);
-        
-        // Scale down ETH price to look like a smaller token (e.g., divide by 1000000)
-        const scaledPrice = price / 1000000;
-        const marketCap = scaledPrice * 3600000000; // 3.6B supply
+        const price = Number(tickerData.lastPrice);
+        const change = Number(tickerData.priceChangePercent);
+        const volume = Number(tickerData.quoteVolume);
 
         setTokenData(prev => ({
           ...prev,
-          price: scaledPrice.toFixed(6),
+          price: price.toFixed(6),
           change: `${change >= 0 ? '+' : ''}${change.toFixed(2)}%`,
-          marketCap: `$${(marketCap / 1000000).toFixed(1)}M`,
-          volume: `$${(volume / 1000000).toFixed(1)}M`,
+          marketCap: 'Live via liquidity feed',
+          volume: `$${(volume / 1000000).toFixed(2)}M`,
+          holders: 'OKX Explorer',
+          circulating: 'Read from on-chain',
           lastUpdate: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
         }));
 
@@ -98,11 +92,22 @@ export default function Nexus() {
         if (timeframe === '1H') { interval = '1m'; limit = 60; }
         if (timeframe === '1W') { interval = '4h'; limit = 42; }
 
-        const klinesRes = await fetch(`/api/klines?interval=${interval}&limit=${limit}`);
-        if (!klinesRes.ok) throw new Error('Failed to fetch chart');
-        const klinesData = await klinesRes.json();
+        let klinesData: any;
+        const klinesRes = await fetch(`/api/klines?network=${state.network}&interval=${interval}&limit=${limit}`);
+        if (klinesRes.ok) {
+          klinesData = await klinesRes.json();
+        } else {
+          const symbol = getMarketSymbol(state.network);
+          const remoteKlinesRes = await fetch(
+            `${state.networkProfile.apiBaseUrl}/api/v1/market/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`,
+            { cache: 'no-store' },
+          );
+          if (!remoteKlinesRes.ok) throw new Error('Failed to fetch chart');
+          klinesData = await remoteKlinesRes.json();
+        }
+        const series = Array.isArray(klinesData) ? klinesData : [];
 
-        const formattedChart = klinesData.map((k: any) => {
+        const formattedChart = series.map((k: any) => {
           const date = new Date(k[0]);
           let name = '';
           if (timeframe === '1H') name = `${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
@@ -111,7 +116,7 @@ export default function Nexus() {
 
           return {
             name,
-            price: parseFloat(k[4]) / 1000000 // Close price scaled
+            price: Number.parseFloat(k[4])
           };
         });
 
@@ -124,10 +129,10 @@ export default function Nexus() {
         // Fallback to 0 / No Data if API fails
         setTokenData(prev => ({
           ...prev,
-          price: '0.000000',
+          price: prev.price,
           change: '0.00%',
-          marketCap: 'No Data',
-          volume: 'No Data',
+          marketCap: 'Feed unavailable',
+          volume: 'Feed unavailable',
           lastUpdate: 'Error'
         }));
       } finally {
@@ -138,25 +143,25 @@ export default function Nexus() {
     fetchRealData();
     const interval = setInterval(fetchRealData, 15000); // Update every 15s
     return () => clearInterval(interval);
-  }, [timeframe]);
+  }, [timeframe, state.network, state.networkProfile.apiBaseUrl]);
 
   const slides = [
     {
       title: "AOXC Token",
-      description: "The native fuel for sovereign intelligence. Orchestrating the multichain mesh through X Layer liquidity.",
+      description: "AOXC ana coin AOXCHAIN üzerinde, X Layer üzerinde ise 1:1 aynalı token olarak çalışır.",
       cta: null,
       bg: "bg-gradient-to-r from-aox-blue/20 to-transparent"
     },
     {
       title: "Buy AOXC",
-      description: "Secure your position in the future of sovereign intelligence. Trade on X Layer with high liquidity.",
-      cta: { label: "Buy on OKX Web3", link: "https://web3.okx.com/tr/token/x-layer/0xeb9580c3946bb47d73aae1d4f7a94148b554b2f4" },
+      description: "X Layer tarafındaki AOXC mirror token için OKX Web3 entegrasyonu canlıdır.",
+      cta: { label: "Buy on OKX Web3", link: AOXC_OKX_TOKEN_URL },
       bg: "bg-gradient-to-r from-aox-green/20 to-transparent"
     },
     {
       title: "Sync Status",
-      description: "Real-time synchronization with X Layer mainnet. Sovereign intelligence nodes are active globally.",
-      cta: { label: "View Network", link: "#" },
+      description: "Arayüz önceliği aoxcore.com (AOXCHAIN), ayrıca X Layer token/sözleşme entegrasyonu birlikte aktiftir.",
+      cta: { label: "Open OKX Explorer", link: AOXC_OKX_EXPLORER_URL },
       bg: "bg-gradient-to-r from-purple-500/20 to-transparent"
     }
   ];
@@ -207,7 +212,7 @@ export default function Nexus() {
                   )}
                   <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-[10px] font-mono text-white/40 uppercase tracking-widest">
                     <Activity className="w-3 h-3" />
-                    <span>Sync: {tokenData.lastUpdate}</span>
+                    <span>Sync: {tokenData.lastUpdate} / {state.networkProfile.label}</span>
                   </div>
                 </div>
               </motion.div>

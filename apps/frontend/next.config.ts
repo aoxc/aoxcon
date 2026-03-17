@@ -1,32 +1,36 @@
-import type {NextConfig} from 'next';
+import type { NextConfig } from 'next';
 import createNextIntlPlugin from 'next-intl/plugin';
 
 const withNextIntl = createNextIntlPlugin();
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+const isStaticExport = process.env.NEXT_OUTPUT_MODE === 'export';
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  basePath: basePath || undefined,
+  assetPrefix: basePath ? `${basePath}/` : undefined,
+  trailingSlash: isStaticExport,
   eslint: {
     ignoreDuringBuilds: true,
   },
   typescript: {
     ignoreBuildErrors: false,
   },
-  // Allow access to remote image placeholder.
   images: {
+    unoptimized: isStaticExport,
     remotePatterns: [
       {
         protocol: 'https',
         hostname: 'picsum.photos',
         port: '',
-        pathname: '/**', // This allows any path under the hostname
+        pathname: '/**',
       },
     ],
   },
-  output: 'standalone',
+  output: isStaticExport ? 'export' : 'standalone',
   transpilePackages: ['motion'],
-  webpack: (config, {dev}) => {
-    // HMR is disabled in AI Studio via DISABLE_HMR env var.
-    // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
+  allowedDevOrigins: ['127.0.0.1', 'localhost'],
+  webpack: (config, { dev }) => {
     if (dev && process.env.DISABLE_HMR === 'true') {
       config.watchOptions = {
         ignored: /.*/,
