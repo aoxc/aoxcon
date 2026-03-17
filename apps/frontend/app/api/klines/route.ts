@@ -1,24 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { demoKlines, fetchAoxKlines, normalizeKlines, parseKlineQuery, parseNetworkQuery } from '@/lib/server/aoxApi';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const interval = searchParams.get('interval') || '1h';
-  const limit = searchParams.get('limit') || '24';
-  
+  const network = parseNetworkQuery(searchParams.get('network'));
+  const { interval, limit } = parseKlineQuery(searchParams.get('interval'), searchParams.get('limit'));
+
   try {
-    const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=ETHUSDT&interval=${interval}&limit=${limit}`, {
-      headers: {
-        'Accept': 'application/json',
-      },
-    });
-    
+    const res = await fetchAoxKlines(network, interval, limit);
+
     if (!res.ok) {
-      return NextResponse.json({ error: 'Failed to fetch klines' }, { status: res.status });
+      return NextResponse.json(demoKlines, { status: 200 });
     }
-    
+
     const data = await res.json();
-    return NextResponse.json(data);
-  } catch (error) {
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json(normalizeKlines(data), { status: 200 });
+  } catch {
+    return NextResponse.json(demoKlines, { status: 200 });
   }
 }
