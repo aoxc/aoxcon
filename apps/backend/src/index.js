@@ -43,6 +43,10 @@ app.use((req, res, next) => {
 });
 
 app.use('/api/v1', v1Router);
+app.post('/rpc/v1', (req, res, next) => {
+  req.url = '/rpc';
+  return v1Router(req, res, next);
+});
 
 app.use((req, res) => {
   res.status(404).json({ error: 'NOT_FOUND' });

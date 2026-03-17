@@ -42,7 +42,7 @@ export function normalizeTicker(payload: any, network: Network) {
 
 export async function fetchAoxTicker(_network: Network) {
   const baseUrl = resolveApiBase();
-  return fetch(`${baseUrl}/api/v1/market/ticker?symbol=${marketSymbol}`, {
+  return fetch(`${baseUrl}/market/ticker?symbol=${marketSymbol}`, {
     headers: { Accept: 'application/json' },
     signal: withTimeout(8000),
     cache: 'no-store',
@@ -62,7 +62,7 @@ export function parseKlineQuery(interval: string | null, limit: string | null) {
 
 export async function fetchAoxKlines(_network: Network, interval: string, limit: number) {
   const baseUrl = resolveApiBase();
-  return fetch(`${baseUrl}/api/v1/market/klines?symbol=${marketSymbol}&interval=${interval}&limit=${limit}`, {
+  return fetch(`${baseUrl}/market/klines?symbol=${marketSymbol}&interval=${interval}&limit=${limit}`, {
     headers: { Accept: 'application/json' },
     signal: withTimeout(8000),
     cache: 'no-store',
