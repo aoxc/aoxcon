@@ -98,3 +98,12 @@ export function getNetworkProfile(network: Network): NetworkProfile {
 export function getRpcFallbackOrder(network: Network): string[] {
   return getNetworkProfile(network).rpcEndpoints;
 }
+
+
+export function getMarketSymbol(network: Network): string {
+  const defaultSymbol = process.env.NEXT_PUBLIC_AOX_MARKET_SYMBOL || 'AOXCUSDT';
+  if (network === 'xlayer') {
+    return process.env.NEXT_PUBLIC_AOX_XLAYER_MARKET_SYMBOL || defaultSymbol;
+  }
+  return defaultSymbol;
+}

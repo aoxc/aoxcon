@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Globe, Zap, Shield, Cpu, Activity, ExternalLink, Database, Wifi } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { AOXC_OKX_EXPLORER_URL, AOXC_OKX_TOKEN_URL, getMarketSymbol } from '@/lib/network';
 import { AOXC_OKX_EXPLORER_URL, AOXC_OKX_TOKEN_URL } from '@/lib/network';
 import { useDemo } from './DemoContext';
 import { 
@@ -57,6 +58,19 @@ export default function Nexus() {
       try {
         setIsLoading(true);
         // Fetch 24h Ticker Data from local proxy
+        let tickerData: any;
+        const tickerRes = await fetch(`/api/ticker?network=${state.network}`);
+        if (tickerRes.ok) {
+          tickerData = await tickerRes.json();
+        } else {
+          const symbol = getMarketSymbol(state.network);
+          const remoteTickerRes = await fetch(
+            `${state.networkProfile.apiBaseUrl}/api/v1/market/ticker?symbol=${symbol}`,
+            { cache: 'no-store' },
+          );
+          if (!remoteTickerRes.ok) throw new Error('Failed to fetch ticker');
+          tickerData = await remoteTickerRes.json();
+        }
         const tickerRes = await fetch(`/api/ticker?network=${state.network}`);
         if (!tickerRes.ok) throw new Error('Failed to fetch ticker');
         const tickerData = await tickerRes.json();
@@ -82,6 +96,19 @@ export default function Nexus() {
         if (timeframe === '1H') { interval = '1m'; limit = 60; }
         if (timeframe === '1W') { interval = '4h'; limit = 42; }
 
+        let klinesData: any;
+        const klinesRes = await fetch(`/api/klines?network=${state.network}&interval=${interval}&limit=${limit}`);
+        if (klinesRes.ok) {
+          klinesData = await klinesRes.json();
+        } else {
+          const symbol = getMarketSymbol(state.network);
+          const remoteKlinesRes = await fetch(
+            `${state.networkProfile.apiBaseUrl}/api/v1/market/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`,
+            { cache: 'no-store' },
+          );
+          if (!remoteKlinesRes.ok) throw new Error('Failed to fetch chart');
+          klinesData = await remoteKlinesRes.json();
+        }
         const klinesRes = await fetch(`/api/klines?network=${state.network}&interval=${interval}&limit=${limit}`);
         if (!klinesRes.ok) throw new Error('Failed to fetch chart');
         const klinesData = await klinesRes.json();
@@ -123,6 +150,7 @@ export default function Nexus() {
     fetchRealData();
     const interval = setInterval(fetchRealData, 15000); // Update every 15s
     return () => clearInterval(interval);
+  }, [timeframe, state.network, state.networkProfile.apiBaseUrl]);
   }, [timeframe, state.network]);
 
   const slides = [

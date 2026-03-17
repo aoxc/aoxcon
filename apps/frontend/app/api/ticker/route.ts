@@ -18,6 +18,14 @@ import { demoTicker, fetchAoxTicker } from '@/lib/server/aoxApi';
     return NextResponse.json(normalizeTicker(data, network), { status: 200 });
   } catch {
     return NextResponse.json({ ...getDemoTicker(network), warning: 'remote_unreachable' }, { status: 200 });
+    if (!res.ok) {
+      return NextResponse.json({ ...getDemoTicker(network), warning: `remote_status_${res.status}` }, { status: 200 });
+    }
+
+    const data = await res.json();
+    return NextResponse.json(normalizeTicker(data, network), { status: 200 });
+  } catch {
+    return NextResponse.json({ ...getDemoTicker(network), warning: 'remote_unreachable' }, { status: 200 });
     const res = await fetchAoxTicker();
 
     if (!res.ok) {

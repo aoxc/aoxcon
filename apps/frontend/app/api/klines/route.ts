@@ -17,6 +17,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(normalizeKlines(data), { status: 200 });
   } catch {
     return NextResponse.json(demoKlines, { status: 200 });
+    const data = await res.json();
+    return NextResponse.json(normalizeKlines(data), { status: 200 });
+  } catch {
+    return NextResponse.json(demoKlines, { status: 200 });
 import { demoKlines, fetchAoxKlines, parseKlineQuery } from '@/lib/server/aoxApi';
 
 export async function GET(request: NextRequest) {
