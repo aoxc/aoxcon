@@ -4,6 +4,10 @@ const config = {
   logLevel: process.env.LOG_LEVEL || 'info',
   geminiApiKey: process.env.GEMINI_API_KEY || '',
   authToken: process.env.SENTINEL_AUTH_TOKEN || '',
+<<<<<<< HEAD
+=======
+  deploymentPlatform: process.env.DEPLOYMENT_PLATFORM || 'self-hosted',
+>>>>>>> origin/codex/integrate-frontend-and-backend-with-aoxchain
   chainId: process.env.AOXCHAIN_CHAIN_ID || 'AOX-MAIN',
   genesisHash: process.env.AOXCHAIN_GENESIS_HASH || null,
   rpcHttpBind: process.env.AOXCHAIN_RPC_HTTP_BIND || 'http://127.0.0.1:2626',
@@ -16,6 +20,16 @@ const config = {
     process.env.AOXCHAIN_RPC_REMOTE || 'https://api.aoxcore.com/rpc/v1',
   xlayerApiBase: process.env.XLAYER_API_BASE || 'https://api.xlayer.tech',
   xlayerRpcUrl: process.env.XLAYER_RPC_URL || 'https://rpc.xlayer.tech',
+<<<<<<< HEAD
+=======
+  cardanoApiBase:
+    process.env.CARDANO_API_BASE ||
+    'https://cardano-mainnet.blockfrost.io/api/v0',
+  cardanoNetwork: process.env.CARDANO_NETWORK || 'mainnet',
+  suiRpcUrl: process.env.SUI_RPC_URL || 'https://fullnode.mainnet.sui.io:443',
+  suiGraphqlUrl:
+    process.env.SUI_GRAPHQL_URL || 'https://sui-mainnet.mystenlabs.com/graphql',
+>>>>>>> origin/codex/integrate-frontend-and-backend-with-aoxchain
   publicApiBase:
     process.env.AOXCHAIN_PUBLIC_API_BASE || 'https://api.aoxcore.com',
   publicWsBase: process.env.AOXCHAIN_PUBLIC_WS_BASE || 'wss://ws.aoxcore.com',

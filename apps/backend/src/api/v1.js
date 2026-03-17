@@ -62,6 +62,18 @@ router.get('/health', (_req, res) => {
     );
   }
 
+<<<<<<< HEAD
+=======
+  if (config.deploymentPlatform.toLowerCase() === 'vercel') {
+    warnings.push(
+      'vercel is suitable for frontend/edge APIs, not long-lived RPC/WS/gRPC termination'
+    );
+    recommendations.push(
+      'Terminate RPC/WS/gRPC on dedicated infra (Kubernetes/VM/LB) and keep Vercel for frontend + lightweight API gateway routes.'
+    );
+  }
+
+>>>>>>> origin/codex/integrate-frontend-and-backend-with-aoxchain
   const readinessScore = Math.max(
     0,
     100 - warnings.length * 15 - errors.length * 30
@@ -84,12 +96,43 @@ router.get('/health', (_req, res) => {
 
 router.get('/endpoints', (_req, res) => {
   res.status(200).json({
+<<<<<<< HEAD
     rest_base: `${config.publicApiBase}/api/v1`,
     rpc_base: `${config.publicApiBase}/rpc/v1`,
     ws_base: `${config.publicWsBase}/ws/v1`,
     grpc_host: config.publicGrpcHost,
     xlayer_api_base: config.xlayerApiBase,
     xlayer_rpc_url: config.xlayerRpcUrl,
+=======
+    deployment: {
+      platform: config.deploymentPlatform,
+      recommendation:
+        config.deploymentPlatform.toLowerCase() === 'vercel'
+          ? 'Use Vercel for frontend + lightweight API proxy. Keep JSON-RPC, WebSocket, gRPC and metrics on dedicated infra.'
+          : 'Self-hosted runtime is suitable for API + RPC gateway workloads.',
+    },
+    networks: {
+      aoxchain: {
+        rest_base: `${config.publicApiBase}/api/v1`,
+        rpc_base: `${config.publicApiBase}/rpc/v1`,
+        ws_base: `${config.publicWsBase}/ws/v1`,
+        grpc_host: config.publicGrpcHost,
+        chain_id: config.chainId,
+      },
+      xlayer: {
+        api_base: config.xlayerApiBase,
+        rpc_url: config.xlayerRpcUrl,
+      },
+      cardano: {
+        api_base: config.cardanoApiBase,
+        network: config.cardanoNetwork,
+      },
+      sui: {
+        rpc_url: config.suiRpcUrl,
+        graphql_url: config.suiGraphqlUrl,
+      },
+    },
+>>>>>>> origin/codex/integrate-frontend-and-backend-with-aoxchain
     canonical_ports: {
       rpc_http: 2626,
       rpc_ws: 3030,
