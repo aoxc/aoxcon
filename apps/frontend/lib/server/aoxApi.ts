@@ -1,22 +1,41 @@
 import { z } from 'zod';
-import { AOXC_OKX_EXPLORER_URL, AOXC_OKX_TOKEN_URL, AOXC_TOKEN_ADDRESS, getMarketSymbol, getNetworkProfile, type Network } from '@/lib/network';
+import { 
+  AOXC_OKX_EXPLORER_URL, 
+  AOXC_OKX_TOKEN_URL, 
+  AOXC_TOKEN_ADDRESS, 
+  getMarketSymbol, 
+  getNetworkProfile, 
+  type Network 
+} from '@/lib/network';
 
 const intervalSchema = z.enum(['1m', '5m', '15m', '1h', '4h', '1d']);
 const networkSchema = z.enum(['main', 'xlayer', 'cardano', 'sui']);
 
+/**
+ * Creates an AbortSignal that automatically times out
+ */
 function withTimeout(ms: number): AbortSignal {
   return AbortSignal.timeout(ms);
 }
 
+/**
+ * Safely parses the network query parameter
+ */
 export function parseNetworkQuery(network: string | null): Network {
   const safe = networkSchema.safeParse(network ?? 'main');
   return safe.success ? safe.data : 'main';
 }
 
+/**
+ * Resolves the API base URL for a given network
+ */
 function resolveApiBase(network: Network) {
   return getNetworkProfile(network).apiBaseUrl;
 }
 
+/**
+ * Normalizes ticker data from various sources into a standard format
+ */
 export function normalizeTicker(payload: any, network: Network) {
   const source = payload?.source || 'remote';
   const lastPrice = Number(payload?.lastPrice ?? payload?.price ?? 0);
@@ -38,21 +57,23 @@ export function normalizeTicker(payload: any, network: Network) {
   };
 }
 
-export async function fetchAoxTicker(_network: Network) {
-<<<<<<< HEAD
-  const baseUrl = resolveApiBase();
-  return fetch(`${baseUrl}/market/ticker?symbol=${marketSymbol}`, {
-=======
-  const baseUrl = resolveApiBase(_network);
-  const symbol = getMarketSymbol(_network);
+/**
+ * Fetches current ticker information for the specified network
+ */
+export async function fetchAoxTicker(network: Network) {
+  const baseUrl = resolveApiBase(network);
+  const symbol = getMarketSymbol(network);
+  
   return fetch(`${baseUrl}/market/ticker?symbol=${symbol}`, {
->>>>>>> origin/codex/integrate-frontend-and-backend-with-aoxchain
     headers: { Accept: 'application/json' },
     signal: withTimeout(8000),
     cache: 'no-store',
   });
 }
 
+/**
+ * Parses and validates kline/candlestick query parameters
+ */
 export function parseKlineQuery(interval: string | null, limit: string | null) {
   const safeInterval = intervalSchema.safeParse(interval ?? '1h');
   const limitNum = Number(limit ?? 24);
@@ -64,21 +85,23 @@ export function parseKlineQuery(interval: string | null, limit: string | null) {
   };
 }
 
-export async function fetchAoxKlines(_network: Network, interval: string, limit: number) {
-<<<<<<< HEAD
-  const baseUrl = resolveApiBase();
-  return fetch(`${baseUrl}/market/klines?symbol=${marketSymbol}&interval=${interval}&limit=${limit}`, {
-=======
-  const baseUrl = resolveApiBase(_network);
-  const symbol = getMarketSymbol(_network);
+/**
+ * Fetches kline/candlestick data for the specified network
+ */
+export async function fetchAoxKlines(network: Network, interval: string, limit: number) {
+  const baseUrl = resolveApiBase(network);
+  const symbol = getMarketSymbol(network);
+  
   return fetch(`${baseUrl}/market/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`, {
->>>>>>> origin/codex/integrate-frontend-and-backend-with-aoxchain
     headers: { Accept: 'application/json' },
     signal: withTimeout(8000),
     cache: 'no-store',
   });
 }
 
+/**
+ * Safely extracts an array of klines from varied API response structures
+ */
 export function normalizeKlines(payload: any): any[] {
   if (Array.isArray(payload)) return payload;
   if (Array.isArray(payload?.data)) return payload.data;
@@ -86,6 +109,9 @@ export function normalizeKlines(payload: any): any[] {
   return [];
 }
 
+/**
+ * Returns mock data for demonstration or fallback purposes
+ */
 export function getDemoTicker(network: Network) {
   return normalizeTicker(
     {

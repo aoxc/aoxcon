@@ -52,7 +52,8 @@ app.use((req, res) => {
   res.status(404).json({ error: 'NOT_FOUND' });
 });
 
-app.use((err, req, res, _next) => {
+app.use((err, req, res, next) => {
+  void next;
   const log = withRequestContext(req.requestId || 'n/a');
   log.error({
     event: 'service.error',
