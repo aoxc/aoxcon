@@ -1,4 +1,6 @@
 import type { Metadata } from 'next';
+import './globals.css';
+
 import { Outfit, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 
@@ -21,6 +23,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
+    <html lang="en" className="dark">
     <html lang="en" className={`${outfit.variable} ${jetbrainsMono.variable} dark`}>
       <body className="antialiased bg-aox-dark text-white" suppressHydrationWarning>
         {children}

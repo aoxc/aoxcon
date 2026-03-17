@@ -46,6 +46,25 @@ const chains = {
       name: 'OKB',
       symbol: 'OKB',
       decimals: 18,
+    },
+    rpcUrls: {
+      default: { http: getRpcFallbackOrder('xlayer') },
+      public: { http: getRpcFallbackOrder('xlayer') },
+    },
+    },
+    rpcUrls: {
+      default: { http: getRpcFallbackOrder('aoxchain') },
+      public: { http: getRpcFallbackOrder('aoxchain') },
+    },
+  }),
+  xlayer: defineChain({
+    id: Number(process.env.NEXT_PUBLIC_XLAYER_CHAIN_ID || 196),
+    name: 'X Layer',
+    network: 'xlayer',
+    nativeCurrency: {
+      name: 'OKB',
+      symbol: 'OKB',
+      decimals: 18,
 const aoxMainnet = defineChain({
   id: Number(process.env.NEXT_PUBLIC_AOX_MAINNET_CHAIN_ID || 2626),
   name: 'AOX Core Mainnet',
