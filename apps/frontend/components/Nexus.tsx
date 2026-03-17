@@ -64,7 +64,7 @@ export default function Nexus() {
         } else {
           const symbol = getMarketSymbol(state.network);
           const remoteTickerRes = await fetch(
-            `${state.networkProfile.apiBaseUrl}/api/v1/market/ticker?symbol=${symbol}`,
+            `${state.networkProfile.apiBaseUrl}/market/ticker?symbol=${symbol}`,
             { cache: 'no-store' },
           );
           if (!remoteTickerRes.ok) throw new Error('Failed to fetch ticker');
@@ -99,7 +99,7 @@ export default function Nexus() {
         } else {
           const symbol = getMarketSymbol(state.network);
           const remoteKlinesRes = await fetch(
-            `${state.networkProfile.apiBaseUrl}/api/v1/market/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`,
+            `${state.networkProfile.apiBaseUrl}/market/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`,
             { cache: 'no-store' },
           );
           if (!remoteKlinesRes.ok) throw new Error('Failed to fetch chart');

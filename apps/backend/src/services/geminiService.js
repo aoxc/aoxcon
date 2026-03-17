@@ -44,7 +44,7 @@ function parseGeminiText(payload) {
         provider: 'gemini-1.5-flash',
       };
     }
-  } catch (_) {
+  } catch {
     return null;
   }
 
@@ -92,7 +92,7 @@ async function analyzeWithGemini({ prompt, context }) {
     }
 
     return parsed;
-  } catch (_) {
+  } catch {
     return heuristicAnalyze(
       { prompt, context },
       'fallback-after-network-error'
