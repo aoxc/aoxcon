@@ -1,7 +1,104 @@
-node_modules/
-.env
-.DS_Store
+# =========================================================
+# Root .gitignore for monorepo
+# Purpose:
+# Exclude dependency directories, build artifacts, local
+# environment files, editor/OS noise, and package-manager
+# state files that must not be versioned.
+# =========================================================
 
-# Frontend package-manager artifacts
+# ---------------------------------------------------------
+# Operating system noise
+# ---------------------------------------------------------
+.DS_Store
+Thumbs.db
+
+# ---------------------------------------------------------
+# Environment files
+# Note:
+# Commit only curated examples such as `.env.example`.
+# Never commit real secret-bearing environment files.
+# ---------------------------------------------------------
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# ---------------------------------------------------------
+# Node.js dependencies
+# Applies recursively across the monorepo.
+# ---------------------------------------------------------
+node_modules/
+
+# ---------------------------------------------------------
+# Package manager artifacts
+# ---------------------------------------------------------
+
+# Yarn Plug'n'Play
+.pnp.*
+.yarn/install-state.gz
+
+# Optional Yarn cache/state directories
+.yarn/cache/
+.yarn/unplugged/
+.yarn/build-state.yml
+
+# PNPM
+.pnpm-store/
+
+# npm
+.npm/
+
+# ---------------------------------------------------------
+# Turbo / monorepo task runners
+# ---------------------------------------------------------
+.turbo/
+
+# ---------------------------------------------------------
+# Build outputs
+# ---------------------------------------------------------
+dist/
+build/
+out/
+coverage/
+
+# ---------------------------------------------------------
+# Next.js / frontend framework caches
+# ---------------------------------------------------------
+.next/
+.vercel/
+
+# ---------------------------------------------------------
+# TypeScript
+# ---------------------------------------------------------
+*.tsbuildinfo
+
+# ---------------------------------------------------------
+# Logs
+# ---------------------------------------------------------
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ---------------------------------------------------------
+# Test and tooling caches
+# ---------------------------------------------------------
+.cache/
+.eslintcache
+
+# ---------------------------------------------------------
+# IDE / Editor files
+# ---------------------------------------------------------
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ---------------------------------------------------------
+# Frontend package-manager artifacts (explicit paths)
+# Keep these even though generic rules above already cover
+# them, because explicit entries improve audit clarity.
+# ---------------------------------------------------------
 apps/frontend/.pnp.*
 apps/frontend/.yarn/install-state.gz
