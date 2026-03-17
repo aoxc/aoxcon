@@ -1,0 +1,14 @@
+{
+  "nav": {
+    "dashboard": "ダッシュボード",
+    "wallet": "ウォレット",
+    "bridge": "ブリッジ",
+    "validators": "バリデーター",
+    "governance": "ガバナンス",
+    "explorer": "エクスプローラー",
+    "network": "ネットワーク",
+    "security": "セキュリティ",
+    "developers": "開発者",
+    "settings": "設定"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "nav": {
+    "dashboard": "Tableau de bord",
+    "wallet": "Portefeuille",
+    "bridge": "Pont",
+    "validators": "Validateurs",
+    "governance": "Gouvernance",
+    "explorer": "Explorateur",
+    "network": "Réseau",
+    "security": "Sécurité",
+    "developers": "Développeurs",
+    "settings": "Paramètres"
+  }
+}

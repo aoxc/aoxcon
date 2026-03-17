@@ -1,0 +1,14 @@
+{
+  "nav": {
+    "dashboard": "Panel",
+    "wallet": "Billetera",
+    "bridge": "Puente",
+    "validators": "Validadores",
+    "governance": "Gobernanza",
+    "explorer": "Explorador",
+    "network": "Red",
+    "security": "Seguridad",
+    "developers": "Desarrolladores",
+    "settings": "Configuración"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "nav": {
+    "dashboard": "仪表板",
+    "wallet": "钱包",
+    "bridge": "桥接",
+    "validators": "验证者",
+    "governance": "治理",
+    "explorer": "浏览器",
+    "network": "网络",
+    "security": "安全",
+    "developers": "开发者",
+    "settings": "设置"
+  }
+}

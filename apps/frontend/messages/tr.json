@@ -1,0 +1,14 @@
+{
+  "nav": {
+    "dashboard": "Gösterge Paneli",
+    "wallet": "Cüzdan",
+    "bridge": "Transfer & Köprü",
+    "validators": "Staking & Validatorlar",
+    "governance": "Yönetişim",
+    "explorer": "Explorer",
+    "network": "Ağ Durumu",
+    "security": "Güvenlik & Risk",
+    "developers": "Geliştirici Merkezi",
+    "settings": "Ayarlar & Profil"
+  }
+}

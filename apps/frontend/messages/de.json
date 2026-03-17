@@ -1,0 +1,14 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "wallet": "Wallet",
+    "bridge": "Brücke",
+    "validators": "Validatoren",
+    "governance": "Governance",
+    "explorer": "Explorer",
+    "network": "Netzwerk",
+    "security": "Sicherheit",
+    "developers": "Entwickler",
+    "settings": "Einstellungen"
+  }
+}

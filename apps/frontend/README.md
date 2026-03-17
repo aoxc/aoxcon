@@ -6,28 +6,15 @@
 
 This contains everything you need to run your app locally.
 
-View your app in AI Studio: https://ai.studio/apps/5a7f372b-414d-4eca-a04f-7aa8b91629a3
+View your app in AI Studio: https://ai.studio/apps/c6ba724f-7557-4ecf-aea0-f212722816aa
 
 ## Run Locally
 
-**Prerequisites:** Node.js 22+
+**Prerequisites:**  Node.js
 
 
-1. Install dependencies (pick one package manager and stick with it):
-   - `npm install`
-   - or `yarn install`
+1. Install dependencies:
+   `npm install`
 2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
 3. Run the app:
    `npm run dev`
-
-## Build troubleshooting
-
-If build errors mention missing files under `.yarn/__virtual__` or `.yarn/berry/cache`, your dependency artifacts were generated on a different machine/path.
-
-Run this once and reinstall:
-
-```bash
-rm -f .pnp.cjs .pnp.loader.mjs .yarn/install-state.gz
-npm install
-npm run build
-```
