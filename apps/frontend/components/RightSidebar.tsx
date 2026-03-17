@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Activity, 
@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { fetchOnChainSnapshot } from '@/lib/onchain';
 import { cn } from '@/lib/utils';
+import { useDemo } from './DemoContext';
 
 interface RightSidebarProps {
   isOpen?: boolean;
@@ -23,43 +24,45 @@ interface RightSidebarProps {
 }
 
 export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
+  const { state } = useDemo();
   const [snapshot, setSnapshot] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
-  const [tokenPrice, setTokenPrice] = useState('0.003412');
-  const [priceChange, setPriceChange] = useState('+5.24%');
+  const [tokenPrice, setTokenPrice] = useState('0.000000');
+  const [priceChange, setPriceChange] = useState('0.00%');
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await fetchOnChainSnapshot();
+      const [data, tickerRes] = await Promise.all([
+        fetchOnChainSnapshot(state.network),
+        fetch(`/api/ticker?network=${state.network}`, { cache: 'no-store' }),
+      ]);
+
       setSnapshot(data);
+      if (tickerRes.ok) {
+        const ticker = await tickerRes.json();
+        const livePrice = Number(ticker.lastPrice || 0);
+        const liveChange = Number(ticker.priceChangePercent || 0);
+        setTokenPrice(livePrice.toFixed(6));
+        setPriceChange(`${liveChange >= 0 ? '+' : ''}${liveChange.toFixed(2)}%`);
+      }
       setLastUpdate(new Date());
     } catch (error) {
       console.error(error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [state.network]);
 
   useEffect(() => {
     loadData();
     const interval = setInterval(loadData, 60000); // 1 minute
-    
-    // Simulate price updates
-    const priceInterval = setInterval(() => {
-      const basePrice = 0.003412;
-      const fluctuation = (Math.random() - 0.5) * 0.00005;
-      const newPrice = (basePrice + fluctuation).toFixed(6);
-      setTokenPrice(newPrice);
-      setPriceChange(fluctuation >= 0 ? '+5.24%' : '+5.23%');
-    }, 15000);
 
     return () => {
       clearInterval(interval);
-      clearInterval(priceInterval);
     };
-  }, []);
+  }, [loadData]);
 
   if (!snapshot && loading) {
     return (
@@ -113,7 +116,7 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
                 <span className="text-xs font-medium uppercase tracking-wider text-aox-blue">AOXC Price</span>
               </div>
               <span className="text-[10px] px-2 py-0.5 rounded-full border border-aox-green/30 text-aox-green bg-aox-green/10">
-                X Layer
+                {state.networkProfile.label}
               </span>
             </div>
             
@@ -131,7 +134,7 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
                 </AnimatePresence>
                 <span className="text-xs font-bold text-aox-green">{priceChange}</span>
               </div>
-              <span className="text-[10px] text-white/40 uppercase tracking-tighter">Real-time / AOXCHAIN</span>
+              <span className="text-[10px] text-white/40 uppercase tracking-tighter">Live / {state.networkProfile.label}</span>
             </div>
           </div>
         </div>

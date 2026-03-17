@@ -1,11 +1,11 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
-
-type Network = 'mainnet' | 'testnet' | 'demo';
+import React, { createContext, useContext, useState } from 'react';
+import { getNetworkProfile, type Network, type NetworkProfile } from '@/lib/network';
 
 interface DemoState {
   network: Network;
+  networkProfile: NetworkProfile;
   balance: number;
   price: number;
   address: string | null;
@@ -20,28 +20,42 @@ interface DemoContextType {
 
 const DemoContext = createContext<DemoContextType | undefined>(undefined);
 
+const DEFAULT_NETWORK: Network = 'aoxchain';
+
+const NETWORK_BALANCES: Record<Network, number> = {
+  aoxchain: 1284520,
+  xlayer: 1284520,
+  demo: 1000000,
+};
+
 export const DemoProvider = ({ children }: { children: React.ReactNode }) => {
   const [state, setState] = useState<DemoState>({
-    network: 'demo',
+    network: DEFAULT_NETWORK,
+    networkProfile: getNetworkProfile(DEFAULT_NETWORK),
     balance: 0,
     price: 0.0614,
     address: null,
   });
 
   const setNetwork = (network: Network) => {
-    setState(prev => ({ ...prev, network }));
+    setState((prev) => ({
+      ...prev,
+      network,
+      networkProfile: getNetworkProfile(network),
+      balance: prev.address ? NETWORK_BALANCES[network] : 0,
+    }));
   };
 
   const connectWallet = () => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
-      address: '0x71C...9A23',
-      balance: 1000000, // Mock balance
+      address: '0x71c03fD77b2A7137cE4bd4317A625f237909A923',
+      balance: NETWORK_BALANCES[prev.network],
     }));
   };
 
   const disconnectWallet = () => {
-    setState(prev => ({ ...prev, address: null, balance: 0 }));
+    setState((prev) => ({ ...prev, address: null, balance: 0 }));
   };
 
   return (
