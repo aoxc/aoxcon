@@ -5,8 +5,14 @@ export interface NetworkProfile {
   label: string;
   rpcEndpoints: string[];
   apiBaseUrl: string;
+  jsonRpcUrl: string;
+  wsUrl: string;
+  grpcHost: string;
+  xlayerApiBase: string;
+  xlayerRpcUrl: string;
   chainId: number;
   nativeCurrencySymbol: string;
+  aoxcTokenIsNativeEquivalent: boolean;
 }
 
 const DEFAULT_LOCAL_RPC = 'http://localhost:2626';
@@ -16,12 +22,18 @@ export const NETWORK_PROFILES: Record<Network, NetworkProfile> = {
     key: 'main',
     label: 'AOX Mainnet',
     rpcEndpoints: [
-      process.env.NEXT_PUBLIC_AOXCHAIN_RPC || 'https://rpc.aoxcore.com',
+      process.env.NEXT_PUBLIC_AOXCHAIN_RPC || 'https://api.aoxcore.com/rpc/v1',
       process.env.NEXT_PUBLIC_AOXCHAIN_RPC_FALLBACK || DEFAULT_LOCAL_RPC,
     ],
-    apiBaseUrl: process.env.NEXT_PUBLIC_AOXCHAIN_API || 'https://api.aoxcore.com',
+    apiBaseUrl: process.env.NEXT_PUBLIC_AOXCHAIN_API || 'https://api.aoxcore.com/api/v1',
+    jsonRpcUrl: process.env.NEXT_PUBLIC_AOXCHAIN_RPC || 'https://api.aoxcore.com/rpc/v1',
+    wsUrl: process.env.NEXT_PUBLIC_AOXCHAIN_WS || 'wss://ws.aoxcore.com/ws/v1',
+    grpcHost: process.env.NEXT_PUBLIC_AOXCHAIN_GRPC || 'grpc.aoxcore.com:443',
+    xlayerApiBase: process.env.NEXT_PUBLIC_XLAYER_API || 'https://api.xlayer.tech',
+    xlayerRpcUrl: process.env.NEXT_PUBLIC_XLAYER_RPC || 'https://rpc.xlayer.tech',
     chainId: Number(process.env.NEXT_PUBLIC_AOXCHAIN_CHAIN_ID || 2626),
     nativeCurrencySymbol: 'AOXC',
+    aoxcTokenIsNativeEquivalent: true,
   },
 };
 
