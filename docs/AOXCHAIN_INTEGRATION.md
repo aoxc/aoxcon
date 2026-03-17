@@ -1,48 +1,52 @@
 # AOXChain Frontend + Backend Integration (aoxcore.com)
 
-Bu proje, **AOXChain + XLayer + Cardano + Sui** uyumluluğu için güncellendi.
+This project is updated for full compatibility across **AOXChain + XLayer + Cardano + Sui**.
 
-## Canonical public adresler (AOXChain)
+## 1. Canonical Public Endpoints (AOXChain)
 
-- REST base: `https://api.aoxcore.com/api/v1`
-- JSON-RPC base: `https://api.aoxcore.com/rpc/v1`
-- WS base: `wss://ws.aoxcore.com/ws/v1`
-- gRPC host: `grpc.aoxcore.com:443`
+- **REST Base:** `https://api.aoxcore.com/api/v1`
+- **JSON-RPC Base:** `https://api.aoxcore.com/rpc/v1`
+- **WS Base:** `wss://ws.aoxcore.com/ws/v1`
+- **gRPC Host:** `grpc.aoxcore.com:443`
 
-## Multi-network endpointler
+## 2. Multi-Network Endpoints
 
-- XLayer API: `https://api.xlayer.tech`
-- XLayer RPC: `https://rpc.xlayer.tech`
-- Cardano API (örnek): `https://cardano-mainnet.blockfrost.io/api/v0`
-- Sui RPC (örnek): `https://fullnode.mainnet.sui.io:443`
+- **XLayer API:** `https://api.xlayer.tech`
+- **XLayer RPC:** `https://rpc.xlayer.tech`
+- **Cardano API:** `https://cardano-mainnet.blockfrost.io/api/v0`
+- **Sui RPC:** `https://fullnode.mainnet.sui.io:443`
 
-## Backend route eşlemesi
+## 3. Backend Route Mapping
 
-- `GET /api/v1/health`
-  - Health payload: `status`, `chain_id`, `genesis_hash`, `tls_enabled`, `mtls_enabled`, `tls_cert_sha256`, `readiness_score`, `warnings`, `errors`, `recommendations`, `uptime_secs`
-  - `DEPLOYMENT_PLATFORM=vercel` ise uzun ömürlü RPC/WS/gRPC için öneri/warning üretir.
-- `GET /api/v1/endpoints`
-  - Deployment recommendation + `aoxchain`, `xlayer`, `cardano`, `sui` endpoint discovery
-- `POST /rpc/v1`
-  - JSON-RPC proxy + whitelist (`eth_chainId`, `eth_call`, `eth_estimateGas`, `eth_getTransactionReceipt`)
-  - Rate limit aşımlarında standart hata modeli (`RATE_LIMIT_EXCEEDED` + `retry_after_ms`)
+### `GET /api/v1/health`
+- **Payload:** Returns `status`, `chain_id`, `genesis_hash`, `tls_enabled`, `mtls_enabled`, `tls_cert_sha256`, `readiness_score`, `warnings`, `errors`, `recommendations`, and `uptime_secs`.
+- **Logic:** If `DEPLOYMENT_PLATFORM=vercel`, generates warnings regarding non-optimal long-lived RPC/WS/gRPC termination.
 
-## Frontend network profili
+### `GET /api/v1/endpoints`
+- Provides deployment recommendations and multi-network (`aoxchain`, `xlayer`, `cardano`, `sui`) discovery metadata for the frontend.
 
-`apps/frontend/lib/network.ts` içinde destek:
+### `POST /rpc/v1`
+- **JSON-RPC Proxy:** Strictly whitelists `eth_chainId`, `eth_call`, `eth_estimateGas`, and `eth_getTransactionReceipt`.
+- **Rate Limiting:** Standardized error model returning `RATE_LIMIT_EXCEEDED` and `retry_after_ms` on limit breach.
 
-- `main` (AOXChain)
-- `xlayer`
-- `cardano`
-- `sui`
+## 4. Frontend Network Profiles (`apps/frontend/lib/network.ts`)
 
-Ayrıca profile alanları:
+- **Supported Keys:** `main` (AOXChain), `xlayer`, `cardano`, `sui`.
+- **Native Asset:** Symbol `AOXC`.
+- **Flags:** `aoxcTokenIsNativeEquivalent` set to `true` for AOXChain and XLayer.
+- **Fields:** Includes `family`, `apiBaseUrl`, `jsonRpcUrl`, `wsUrl`, `grpcHost`, and `explorerUrl`.
 
-- `family`, `apiBaseUrl`, `jsonRpcUrl`, `wsUrl`, `grpcHost`, `explorerUrl`
-- `aoxcTokenIsNativeEquivalent` (AOXChain + XLayer için `true`)
+## 5. Critical Environment Variables
 
-## Vercel notu
+- `NEXT_PUBLIC_AOXCHAIN_API` (Default: `https://api.aoxcore.com/api/v1`)
+- `NEXT_PUBLIC_AOXCHAIN_RPC` (Default: `https://api.aoxcore.com/rpc/v1`)
+- `NEXT_PUBLIC_AOXCHAIN_WS` (Default: `wss://ws.aoxcore.com/ws/v1`)
+- `NEXT_PUBLIC_AOXCHAIN_GRPC` (Default: `grpc.aoxcore.com:443`)
+- `NEXT_PUBLIC_XLAYER_API` (Default: `https://api.xlayer.tech`)
+- `NEXT_PUBLIC_XLAYER_RPC` (Default: `https://rpc.xlayer.tech`)
 
-- **Vercel uygun kullanım:** Frontend, SSR, hafif API proxy endpointleri.
-- **Vercel tek başına uygun değil:** Uzun yaşayan JSON-RPC, WebSocket, gRPC terminasyonu.
-- Öneri: RPC/WS/gRPC katmanını dedicated infra üzerinde (VM/Kubernetes/LB) çalıştırıp Vercel’i frontend edge katmanı olarak kullanın.
+## 6. Infrastructure & Deployment Notes
+
+- **Vercel Usage:** Optimal for Frontend, SSR, and lightweight API proxying.
+- **Vercel Limitation:** Not suitable for persistent WebSocket or gRPC connections due to serverless execution limits.
+- **Strategic Recommendation:** Terminate high-throughput RPC, WebSocket, and gRPC traffic on dedicated infrastructure (Kubernetes, Bare Metal, or VMs) while keeping Vercel as the global Edge layer for the frontend.

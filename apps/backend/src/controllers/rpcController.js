@@ -7,6 +7,9 @@ const ALLOWED_METHODS = new Set([
   'eth_getTransactionReceipt',
 ]);
 
+/**
+ * Standardizes RPC error responses
+ */
 function rpcErrorPayload(code, message, requestId, extras = {}) {
   return {
     code,
@@ -17,22 +20,25 @@ function rpcErrorPayload(code, message, requestId, extras = {}) {
   };
 }
 
+/**
+ * Proxies JSON-RPC requests to the upstream AOXChain node
+ */
 async function proxyJsonRpc(req, res) {
   const requestId = req.requestId || 'n/a';
   const method = req.body?.method;
 
+  // Validate JSON-RPC 2.0 structure
   if (!req.body || req.body.jsonrpc !== '2.0' || typeof method !== 'string') {
-    return res
-      .status(400)
-      .json(
-        rpcErrorPayload(
-          'INVALID_REQUEST',
-          'INVALID_REQUEST: jsonrpc=2.0 and method are required',
-          requestId
-        )
-      );
+    return res.status(400).json(
+      rpcErrorPayload(
+        'INVALID_REQUEST',
+        'INVALID_REQUEST: jsonrpc=2.0 and method are required',
+        requestId
+      )
+    );
   }
 
+  // Validate method whitelist
   if (!ALLOWED_METHODS.has(method)) {
     return res.status(404).json(
       rpcErrorPayload(
@@ -51,15 +57,18 @@ async function proxyJsonRpc(req, res) {
     const rpcResponse = await fetch(config.rpcHttpBind, {
       method: 'POST',
       headers: {
-        'content-type': 'application/json',
-        'x-request-id': requestId,
+        'Content-Type': 'application/json',
+        'X-Request-ID': requestId,
       },
       body: JSON.stringify(req.body),
     });
 
     const payload = await rpcResponse.json();
     return res.status(rpcResponse.status).json(payload);
-  } catch {
+  } catch (error) {
+    // Log error internally if a logger is available
+    // console.error(`RPC Proxy Error: ${error.message}`);
+
     return res.status(500).json(
       rpcErrorPayload(
         'INTERNAL_ERROR',
