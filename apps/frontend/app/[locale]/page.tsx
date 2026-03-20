@@ -6,6 +6,7 @@ import Sidebar from '@/components/Sidebar';
 import Nexus from '@/components/Nexus';
 import SynapseControl from '@/components/SynapseControl';
 import WalletView from '@/components/WalletView';
+import StakeView from '@/components/StakeView';
 import BridgeView from '@/components/BridgeView';
 import ExplorerView from '@/components/ExplorerView';
 import GovernanceView from '@/components/GovernanceView';
@@ -33,6 +34,8 @@ export default function Dashboard() {
         return <SynapseControl />;
       case 'wallet':
         return <WalletView />;
+      case 'staking':
+        return <StakeView />;
       case 'bridge':
         return <BridgeView />;
       case 'explorer':
